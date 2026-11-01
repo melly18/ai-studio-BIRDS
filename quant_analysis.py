@@ -7,9 +7,9 @@ import pandas as pd
 class SeatLeakage:
     """서비스의 유휴 좌석 수와 추정 월간 낭비 금액."""
 
-    service_name: str
-    inactive_seats: int
-    wasted_spend: int
+    service_name: str  #툴 이름
+    inactive_seats: int  #유휴 좌석 수
+    wasted_spend: int   #낭비 금액
 
 
 def calculate_seat_leakage(clean_df: pd.DataFrame) -> list[SeatLeakage]:
@@ -25,48 +25,55 @@ def calculate_seat_leakage(clean_df: pd.DataFrame) -> list[SeatLeakage]:
         ``clean_df``에 서비스가 처음 나타나는 순서의 ``SeatLeakage`` 목록.
 
     Raises:
+        TypeError: 입력이 pandas DataFrame이 아닌 경우.
         KeyError: 필수 컬럼이 누락된 경우.
         ValueError: 결측치 또는 유효하지 않은 값이 포함된 경우.
     """
-    required_columns = {
+    if not isinstance(clean_df, pd.DataFrame):    #입력이 df가 아닐 때 에러 발생
+        raise TypeError("Input must be a pandas DataFrame")
+    
+    required_columns = {   #꼭 필요한 컬럼들
         "service_name",
         "seat_count",
         "active_users",
         "monthly_cost_krw",
     }
-    missing_columns = required_columns.difference(clean_df.columns)
+    missing_columns = required_columns.difference(clean_df.columns)   #필요 컬럼이 모두 있는지 확인
     if missing_columns:
         raise KeyError(f"Missing required columns: {sorted(missing_columns)}")
 
-    if clean_df.empty:
+    if clean_df.empty:   #빈 df라면 빈 리스트 반환
         return []
 
-    if clean_df.isna().any().any():
+    if clean_df[list(required_columns)].isna().any().any():   #필요 컬럼들의 결측치 확인
         raise ValueError("Input data must not contain missing values")
 
-    numeric_columns = ["seat_count", "active_users", "monthly_cost_krw"]
-    if (clean_df[numeric_columns] < 0).any().any():
+    numeric_columns = ["seat_count", "active_users", "monthly_cost_krw"]  #이상치 확인 필요한 숫자형 컬럼들
+    if (clean_df[numeric_columns] < 0).any().any():   #음수 포함시 에러 발생
         raise ValueError("Seat counts, active users, and costs must not be negative")
 
-    if (clean_df["seat_count"] == 0).any():
+    if (clean_df["seat_count"] == 0).any():   #seat_count가 0인 경우 에러 발생(0으로는 나눌 수 없음)
         raise ValueError("seat_count must be greater than zero")
 
-    if (clean_df["active_users"] > clean_df["seat_count"]).any():
+    if (clean_df["active_users"] > clean_df["seat_count"]).any():   #active_users가 seat_count보다 큰 경우 에러 발생(유휴 좌석 음수)
         raise ValueError("active_users cannot exceed seat_count")
 
-    records = clean_df.assign(
-        inactive_seats=clean_df["seat_count"] - clean_df["active_users"],
+    records = clean_df.assign(   #유휴 좌석 컬럼 생성
+        inactive_seats=clean_df["seat_count"] - clean_df["active_users"]
+    )
+    records = records.assign(   #낭비 금액 컬럼 생성(좌석당 단가 * 유휴 좌석 수)
         wasted_spend=(
-            clean_df["monthly_cost_krw"]
-            * (clean_df["seat_count"] - clean_df["active_users"])
-            / clean_df["seat_count"]
-        ).round().astype(int),
+            records["monthly_cost_krw"]
+            * records["inactive_seats"]
+            / records["seat_count"]
+        ).round().astype(int)
     )
 
-    aggregated = records.groupby("service_name", sort=False)[
+    aggregated = records.groupby("service_name", sort=False)[   #툴 별로 합산
         ["inactive_seats", "wasted_spend"]
     ].sum()
-    return [
+
+    return [    #list[SeatLeakage] 형태로 반환
         SeatLeakage(
             service_name=service_name,
             inactive_seats=int(values["inactive_seats"]),
