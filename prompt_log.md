@@ -67,5 +67,5 @@ service_name(str);툴 이름, inactive_seats(int);유휴 좌석, wasted_spend(in
 
     추가적으로 팀원들의 함수 리딩을 돕기 위해 간단한 주석을 작성함.
 
-- 수정 내역: 커밋 d4e5f6a
+- 수정 내역: 커밋 eb402c9
 - 테스트 결과 : pytest 3 passed
