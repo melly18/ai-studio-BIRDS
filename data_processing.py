@@ -122,12 +122,6 @@ def clean_billing_csv(df: pd.DataFrame, catalog: dict) -> tuple[pd.DataFrame, li
             seen_tx_ids.add(original_tx)
 
     work["tx_id"] = work["tx_id"].fillna("").astype(str).str.strip()
-    empty_tx = work["tx_id"].eq("")
-    for i in range(int(empty_tx.sum())):
-        tx_auto = f"TX-AUTO-{auto_index:03d}"
-        auto_index += 1
-        warnings.append(_warning(tx_auto, "빈 tx_id 자동 발급", "보정"))
-    work.loc[empty_tx, "tx_id"] = [f"TX-AUTO-{i:03d}" for i in range(auto_index - int(empty_tx.sum()), auto_index)]
 
     # 2. billing_date
     for idx, row in work.iterrows():
@@ -149,7 +143,9 @@ def clean_billing_csv(df: pd.DataFrame, catalog: dict) -> tuple[pd.DataFrame, li
         if standard_service != raw_service:
             warnings.append(_warning(work.at[idx, "tx_id"], f"service_name 표준화: {raw_service} -> {standard_service}", "보정"))
         else:
-            warnings.append(_warning(work.at[idx, "tx_id"], f"미등록 서비스명 유지: {raw_service}", "보정"))
+            # FIXED: 미등록 서비스명 유지 경고는 alias_map 미보유일 때만 기록
+            if raw_service.casefold() not in alias_map:
+                warnings.append(_warning(work.at[idx, "tx_id"], f"미등록 서비스명 유지: {raw_service}", "보정"))
         work.at[idx, "service_name"] = standard_service
 
     # 4. department
@@ -215,7 +211,8 @@ def clean_billing_csv(df: pd.DataFrame, catalog: dict) -> tuple[pd.DataFrame, li
             work.drop(idx, inplace=True)
             continue
         try:
-            billing_amount_krw = parse_amount(raw_amount)
+            # FIXED: 금액 파싱은 int(raw_amount)로 수행
+            billing_amount_krw = int(raw_amount)
         except ValueError:
             warnings.append(_warning(work.at[idx, "tx_id"], f"billing_amount_krw 변환 실패: {raw_amount}", "제외"))
             work.drop(idx, inplace=True)
@@ -231,6 +228,18 @@ def clean_billing_csv(df: pd.DataFrame, catalog: dict) -> tuple[pd.DataFrame, li
         cycle = row["billing_cycle"]
         total = int(row["billing_amount_krw"])
         work.at[idx, "monthly_cost_krw"] = to_monthly(total, cycle)
+
+    # FIXED: 남은 행 중 빈 tx_id만 TX-AUTO-001부터 발급
+    empty_tx = work["tx_id"].eq("")
+    if empty_tx.any():
+        for i, idx in enumerate(work.index[empty_tx], start=1):
+            work.at[idx, "tx_id"] = f"TX-AUTO-{i:03d}"
+
+    # FIXED: 결과 직전 숫자형 열을 int로 강제 변환
+    work["seat_count"] = work["seat_count"].astype(int)
+    work["active_users"] = work["active_users"].astype(int)
+    work["billing_amount_krw"] = work["billing_amount_krw"].astype(int)
+    work["monthly_cost_krw"] = work["monthly_cost_krw"].astype(int)
 
     result = work[
         [
