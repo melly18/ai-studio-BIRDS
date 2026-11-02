@@ -1,6 +1,6 @@
 # handoff — clean_billing_csv (요약본)
 
-Copilot에 `#file:handoff.md`로 전달한 문서(164줄)에서 핵심만 남긴 요약본이다. 진행 순서·커밋 계획 등 작업 지시는 생략했고, 절 번호는 프롬프트의 "3절·4절·5절"과 맞췄다.
+Copilot에 `#file:handoff.md`로 전달한 문서.
 작성: 박지우 (Claude 보조로 명세·테스트 케이스 정리)
 
 ## 2. 명세
