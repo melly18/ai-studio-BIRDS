@@ -1,3 +1,115 @@
+## [data_processing] load_billing_csv() - 2026-11-02, 작성자: 차세연
+- 사용 도구: GitHub Copilot Chat
+- 프롬프트:
+```
+당신은 파이썬 백엔드 개발을 돕는 어시스턴트입니다.
+SaaS 구독 비용 분석 시스템의 데이터 로딩 계층 중, 결제 내역 CSV를 읽어 원본 DataFrame으로 반환하는 함수를 구현해 주세요.
+이 함수는 data_processing.py 파일 상단에 추가됩니다. 같은 파일의 기존 함수(mask_pii_data, parse_date, clean_billing_csv 등)는 절대 수정하지 마세요.
+
+[함수 시그니처 — 변경 금지]
+def load_billing_csv(file_path: str) -> pd.DataFrame:
+
+[입력 명세]
+file_path: 결제 내역 CSV 경로. 예: "payment_history_raw_100_sample.csv"
+파일은 UTF-8 또는 UTF-8 BOM, 쉼표 구분, 첫 줄 헤더입니다. 컬럼 9개:
+tx_id, billing_date, service_name, department, billing_cycle,
+seat_count, active_users, billing_amount_krw, card_holder_pii
+
+[출력 명세]
+- 파일 헤더를 컬럼명으로, 각 행을 한 건으로 가진 pd.DataFrame
+- 모든 값은 문자열(str)로 읽을 것. 결측 셀은 NaN이 아닌 빈 문자열 ""
+- 컬럼 순서와 이름은 파일 헤더 그대로이고, BOM 문자가 첫 컬럼명에 섞이면 안 됨
+- 행 수는 파일의 데이터 행 수와 동일
+
+[예외·경계 방침]
+- 파일이 없음: FileNotFoundError (pandas가 발생시키는 것을 그대로 전파, 직접 catch하지 말 것)
+- 0바이트 파일 또는 헤더 없음(pandas.errors.EmptyDataError): ValueError 발생, 원인 예외를 `from`으로 연결
+- 디코딩 실패(UnicodeDecodeError) 또는 파싱 실패(pandas.errors.ParserError): ValueError 발생, 원인 예외를 `from`으로 연결
+- 헤더만 있고 데이터 행이 0개: 예외 없이 컬럼만 있는 빈 DataFrame 반환
+- 필수 컬럼 존재 여부는 이 함수에서 검증하지 않음
+
+[제약 조건]
+- pandas 사용 가능. pd.read_csv에 encoding="utf-8-sig", dtype=str, keep_default_na=False 를 사용할 것
+- 데이터 정제 금지: 컬럼명 변경, 타입 변환, 금액의 쉼표 제거, 날짜 변환, 중복 제거, 정렬, 결측치 처리, PII 마스킹을 하지 말 것 (정제는 다른 함수의 책임)
+- 시그니처 변경 금지. 가변 기본값 인자 사용 금지
+- 타입 힌트와 docstring 필수. docstring에는 Raises 항목을 포함할 것
+- 함수 구현만 출력하고, 테스트 코드는 작성하지 말 것
+- 필요한 import가 있으면 함수 코드와 분리해서 따로 알려 주고, 기존 import는 제거하지 말 것
+
+[통과해야 할 테스트]
+1. 샘플 "payment_history_raw_100_sample.csv" 로드 시: len(df) == 100, 컬럼이 위 9개와 순서까지 동일, 첫 컬럼명 == "tx_id", 첫 행 billing_amount_krw == "-385000", 7번째 행 billing_amount_krw == "1,656,000" (문자열 그대로), 모든 값이 str
+2. 헤더만 있는 CSV: 예외 없이 len(df) == 0 이고 컬럼명이 헤더와 동일
+3. 존재하지 않는 경로 "no_such_file.csv": FileNotFoundError
+4. 0바이트 파일: ValueError
+```
+- 생성 코드 위치: 커밋 해시 (수정 전 원본)
+- 코드 리딩에서 발견한 결함:
+  1) ...
+  2) ...
+- 수정 내역: 커밋 해시
+- 테스트 결과: pytest N passed
+
+## [data_processing] load_saas_catalog() - 2026-11-02, 작성자: 차세연
+- 사용 도구: GitHub Copilot Chat
+- 프롬프트:
+```
+당신은 파이썬 백엔드 개발을 돕는 어시스턴트입니다.
+SaaS 구독 비용 분석 시스템의 데이터 로딩 계층 중, 공급사 카탈로그 JSON을 읽어 필수 키를 검증한 뒤 dict로 반환하는 함수를 구현해 주세요.
+이 함수는 data_processing.py 파일 상단에 추가됩니다. 같은 파일의 기존 함수(build_alias_map, clean_billing_csv 등)는 절대 수정하지 마세요.
+
+[함수 시그니처 — 변경 금지]
+def load_saas_catalog(catalog_path: str) -> dict[str, Any]:
+
+[입력 명세]
+catalog_path: 카탈로그 JSON 경로. 예: "saas_catalog_30_sample.json"
+JSON 구조(요약):
+{
+  "meta": {"catalog_version": "v1.0", ...},
+  "tools": [
+    {"tool_id": "figma", "service_name": "Figma", "aliases": ["피그마", "figma", "FIGMA"],
+     "category_tags": ["design", "prototyping"],
+     "pricing_tiers": [{"tier_name": "Starter", "price_monthly_per_seat_krw": 0, ...}]},
+    ...
+  ]
+}
+
+[출력 명세]
+- 검증을 통과한 JSON 내용을 담은 dict. 원본 그대로이며 키 추가, 값 변환, 정렬을 하지 않음
+- 필수 키: 최상위 "meta"(dict), "tools"(list). tools의 각 원소(dict)는 "tool_id", "service_name", "aliases", "category_tags", "pricing_tiers" 를 모두 가져야 함
+
+[예외·경계 방침]
+- 파일이 없음: FileNotFoundError (open이 발생시키는 것을 그대로 전파, 직접 catch하지 말 것)
+- JSON 문법 오류: ValueError 발생, json.JSONDecodeError를 `from`으로 연결
+- 최상위가 dict가 아님: ValueError
+- 최상위 필수 키("meta", "tools") 누락: ValueError, 메시지 형식 "필수 키 누락: {키 이름}"
+- "meta"가 dict가 아니거나 "tools"가 list가 아님: ValueError
+- tools 원소가 dict가 아니거나 필수 키가 누락됨: ValueError, 메시지 형식 "tools[{인덱스}] 필수 키 누락: {키 이름}" (필수 키 순서대로 검사해 처음 발견한 누락 키를 보고)
+- tools가 빈 리스트인 경우: 예외 없이 그대로 반환 (허용)
+- pricing_tiers 내부 값, aliases 원소 타입 등 그 외 하위 구조는 검증하지 않음
+
+[제약 조건]
+- 표준 라이브러리만 사용 (json 사용, pandas 사용 금지 — 이 함수는 pandas와 무관)
+- 파일은 encoding="utf-8-sig"로 열 것
+- 데이터 변환 금지: 값 정규화, 기본값 채우기, 키 추가를 하지 말 것
+- 시그니처 변경 금지. 가변 기본값 인자 사용 금지
+- 타입 힌트와 docstring 필수. docstring에는 Raises 항목을 포함할 것
+- 함수 구현만 출력하고, 테스트 코드는 작성하지 말 것
+- 필요한 import(json, typing.Any 등)가 있으면 함수 코드와 분리해서 따로 알려 주고, 기존 import는 제거하지 말 것
+
+[통과해야 할 테스트]
+1. 샘플 "saas_catalog_30_sample.json" 로드 시: len(result["tools"]) == 30, result["meta"]["catalog_version"] == "v1.0", result["tools"][0]["service_name"] == "Figma", 결과가 json.load로 직접 읽은 값과 == 동일
+2. {"meta": {}, "tools": []} : 예외 없이 동일한 dict 반환
+3. tools[0]에서 "aliases"가 빠진 JSON: ValueError 발생, 메시지에 "aliases" 포함
+4. 존재하지 않는 경로: FileNotFoundError
+5. 깨진 JSON 문자열 파일: ValueError
+```
+- 생성 코드 위치: 커밋 해시 (수정 전 원본)
+- 코드 리딩에서 발견한 결함:
+  1) ...
+  2) ...
+- 수정 내역: 커밋 해시
+- 테스트 결과: pytest N passed
+
 ## [quant_analysis] calculate_seat_leakage - 2026-11-01, 작성자: 김서연
 - 사용 도구: GitHub Copilot Chat
 - 프롬프트:
