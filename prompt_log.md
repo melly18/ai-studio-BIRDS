@@ -42,7 +42,7 @@ seat_count, active_users, billing_amount_krw, card_holder_pii
 3. 존재하지 않는 경로 "no_such_file.csv": FileNotFoundError
 4. 0바이트 파일: ValueError
 ```
-- 생성 코드 위치: 커밋 해시 (수정 전 원본)
+- 생성 코드 위치: 커밋 2ab8303
 - 코드 리딩에서 발견한 결함:
   1) ...
   2) ...
