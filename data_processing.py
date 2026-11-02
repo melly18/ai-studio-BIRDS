@@ -7,6 +7,9 @@ import pandas as pd
 
 
 def mask_pii_data(df: pd.DataFrame) -> pd.DataFrame:
+    if df.empty: # 코드 리딩 후 빈 데이터프레임 방어 로직
+        return df.copy()
+    
     """Return a copy of the payment data with cardholder PII redacted."""
     masked_df = df.copy()
     if "card_holder_pii" in masked_df.columns:
