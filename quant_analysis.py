@@ -12,6 +12,9 @@ class SeatLeakage:
     wasted_spend: int   #낭비 금액
 
 
+DuplicatePair = list[str]
+
+
 def calculate_seat_leakage(clean_df: pd.DataFrame) -> list[SeatLeakage]:
     """서비스별 유휴 좌석 수와 월간 낭비 금액을 계산한다.
 
@@ -81,3 +84,92 @@ def calculate_seat_leakage(clean_df: pd.DataFrame) -> list[SeatLeakage]:
         )
         for service_name, values in aggregated.iterrows()
     ]
+
+
+def detect_duplicate_tags(clean_df: pd.DataFrame, catalog: list) -> list[DuplicatePair]:
+    """사용 중인 SaaS 중 공통 카테고리 태그를 가진 쌍을 찾는다.
+
+    ``clean_df``에서는 ``service_name``만 사용하며, 서비스명 또는 카탈로그의
+    별칭으로 카탈로그 항목을 식별한다. 결과의 서비스명은 카탈로그의
+    ``service_name``이고, 공통 태그는 카탈로그에 정의된 순서를 따른다.
+
+    Args:
+        clean_df: ``service_name`` 컬럼을 포함하는 정제된 결제 데이터프레임.
+        catalog: SaaS 카탈로그 딕셔너리 목록.
+
+    Returns:
+        ``[서비스명1, 서비스명2, 공통태그...]`` 형식의 중복 서비스 쌍 목록.
+        공통 태그가 없거나 입력 데이터 또는 카탈로그가 비어 있으면 빈 목록을
+        반환한다.
+
+    Raises:
+        TypeError: ``clean_df``가 pandas DataFrame이 아닌 경우.
+        KeyError: 비어 있지 않은 ``clean_df``에 ``service_name``이 없는 경우.
+    """
+    if not isinstance(clean_df, pd.DataFrame):
+        raise TypeError("Input must be a pandas DataFrame")
+
+    if clean_df.empty or not catalog:
+        return []
+
+    if "service_name" not in clean_df.columns:
+        raise KeyError("Missing required column: service_name")
+
+    used_names = {
+        value.strip().casefold()
+        for value in clean_df["service_name"]
+        if isinstance(value, str) and value.strip()
+    }
+
+    matched_catalog = []
+    seen_service_names = set()
+    for item in catalog:
+        if not isinstance(item, dict):
+            continue
+
+        service_name = item.get("service_name")
+        if not isinstance(service_name, str) or not service_name.strip():
+            continue
+
+        canonical_name = service_name.strip()
+        canonical_key = canonical_name.casefold()
+        aliases = item.get("aliases", [])
+        if isinstance(aliases, str):
+            aliases = [aliases]
+        if not isinstance(aliases, (list, tuple, set)):
+            aliases = []
+
+        names = {canonical_key}
+        names.update(
+            alias.strip().casefold()
+            for alias in aliases
+            if isinstance(alias, str) and alias.strip()
+        )
+        if used_names.isdisjoint(names) or canonical_key in seen_service_names:
+            continue
+
+        tags = item.get("category_tags", [])
+        if isinstance(tags, str):
+            tags = [tags]
+        if not isinstance(tags, (list, tuple, set)):
+            tags = []
+        normalized_tags = []
+        for tag in tags:
+            if isinstance(tag, str) and tag not in normalized_tags:
+                normalized_tags.append(tag)
+
+        matched_catalog.append((canonical_name, normalized_tags))
+        seen_service_names.add(canonical_key)
+
+    duplicate_pairs = []
+    for index, (first_name, first_tags) in enumerate(matched_catalog):
+        for second_name, second_tags in matched_catalog[index + 1:]:
+            second_tag_set = set(second_tags)
+            common_tags = [
+                tag for tag in first_tags
+                if tag in second_tag_set
+            ]
+            if common_tags:
+                duplicate_pairs.append([first_name, second_name, *common_tags])
+
+    return duplicate_pairs
