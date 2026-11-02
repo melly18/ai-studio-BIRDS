@@ -2,6 +2,8 @@ from dataclasses import dataclass
 
 import pandas as pd
 
+import pylance
+
 
 @dataclass(frozen=True)
 class SeatLeakage:
@@ -86,7 +88,7 @@ def calculate_seat_leakage(clean_df: pd.DataFrame) -> list[SeatLeakage]:
     ]
 
 
-def detect_duplicate_tags(clean_df: pd.DataFrame, catalog: list) -> list[DuplicatePair]:
+def detect_duplicate_tags(clean_df: pd.DataFrame, catalog: dict) -> list[DuplicatePair]:
     """사용 중인 SaaS 중 공통 카테고리 태그를 가진 쌍을 찾는다.
 
     ``clean_df``에서는 ``service_name``만 사용하며, 서비스명 또는 카탈로그의
