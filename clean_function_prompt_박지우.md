@@ -7,8 +7,7 @@ Copilot
 - 보조 도구: Claude — handoff(명세·테스트 케이스) 작성, 결함 원인 진단과 수정 방향 제시. 코드 생성·수정은 GitHub Copilot.
 
 ## 프롬포트
-※ first.py = 커밋 337b2fb의 Copilot 생성 원본, handoff.md = 저장소의 handoff_clean_billing_csv.md(요약본)
-※ 원본 생성 프롬프트는 Copilot 채팅 기록에서 찾지 못해, 생성 코드(337b2fb)와 명세를 바탕으로 사후 재구성함.
+※ first.py = 커밋 337b2fb의 Copilot 생성 원본, handoff.md = 저장소의 handoff_clean_billing_csv.md
 ```
 결제내역 CSV를 정제하는 함수를 data_processing.py에 구현하라.
 
