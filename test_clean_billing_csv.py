@@ -27,7 +27,8 @@ def _sample_paths():
     return required
 
 
-def test_clean_billing_csv_t01_normal():
+def test_t01_normal_row_cleaning_and_monthly_conversion():
+    """정상: 표준 alias와 월간/연간 변환을 적용한 정제 결과를 검증한다."""
     df = pd.DataFrame(
         {
             "tx_id": ["TX-1", "TX-2"],
@@ -60,7 +61,8 @@ def test_clean_billing_csv_t01_normal():
     assert isinstance(warnings, list)
 
 
-def test_clean_billing_csv_t02_empty_dataframe():
+def test_t02_empty_df_returns_empty_result_and_no_warnings():
+    """경계: 비어 있는 DataFrame은 10개 열의 빈 결과와 빈 경고를 반환한다."""
     df = pd.DataFrame(
         columns=[
             "tx_id",
@@ -83,7 +85,8 @@ def test_clean_billing_csv_t02_empty_dataframe():
     assert warnings == []
 
 
-def test_clean_billing_csv_t03_boundary_auto_tx_and_corrections():
+def test_t03_empty_tx_id_is_auto_assigned_and_overflow_is_corrected():
+    """경계: 빈 tx_id는 자동 발급되고, 과도한 active_users는 seat_count로 보정한다."""
     df = pd.DataFrame(
         {
             "tx_id": [""],
@@ -113,7 +116,8 @@ def test_clean_billing_csv_t03_boundary_auto_tx_and_corrections():
     }
 
 
-def test_clean_billing_csv_t04_exception_rows_excluded():
+def test_t04_excluded_invalid_rows_are_dropped_with_warning_reasons():
+    """예외: 중복, 날짜, cycle, seat, 금액 오류 행은 모두 제외되고 경고를 남긴다."""
     df = pd.DataFrame(
         {
             "tx_id": ["TX-1", "TX-1", "TX-3", "TX-4", "TX-5", "TX-6"],
@@ -143,7 +147,8 @@ def test_clean_billing_csv_t04_exception_rows_excluded():
     assert {warning["action"] for warning in warnings} == {"제외"}
 
 
-def test_clean_billing_csv_t05_missing_required_column_raises():
+def test_t05_missing_required_columns_raise_value_error():
+    """예외: 필수 열이 빠지면 ValueError와 누락 열명을 반환한다."""
     df = pd.DataFrame(
         {
             "tx_id": ["TX-1"],
@@ -162,7 +167,8 @@ def test_clean_billing_csv_t05_missing_required_column_raises():
         clean_billing_csv(df, CATALOG)
 
 
-def test_clean_billing_csv_t06_integration_sample_files():
+def test_t06_sample_integration_matches_reference_output():
+    """통합: 샘플 CSV와 정답지 데이터가 정제 결과와 일치하는지 검증한다."""
     csv_path, catalog_path, answer_path = _sample_paths()
 
     raw_df = pd.read_csv(csv_path, dtype=str)
@@ -181,7 +187,8 @@ def test_clean_billing_csv_t06_integration_sample_files():
     assert result["tx_id"].astype(str).tolist() == answer_df["tx_id"].astype(str).tolist()
 
 
-def test_clean_billing_csv_t07_empty_dataframe_missing_pii_column_should_fail():
+def test_t07_empty_df_missing_column_raises():
+    """예외: 빈 DataFrame이라도 필수 열이 없으면 ValueError를 발생시킨다."""
     df = pd.DataFrame(
         columns=[
             "tx_id",
