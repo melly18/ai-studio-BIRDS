@@ -1,0 +1,1292 @@
+{
+  "meta": {
+    "catalog_version": "v1.0",
+    "last_updated": "2026-10-20",
+    "price_basis": "좌석당, 부가세 별도",
+    "currency": "KRW",
+    "tag_vocabulary": [
+      "design",
+      "prototyping",
+      "guest_sharing",
+      "project_management",
+      "task_tracking",
+      "documentation",
+      "chat",
+      "video_conferencing",
+      "file_storage",
+      "file_sharing",
+      "development",
+      "version_control",
+      "ai_assistant",
+      "writing",
+      "knowledge_management",
+      "database",
+      "website_building",
+      "automation",
+      "security",
+      "password_management",
+      "analytics",
+      "whiteboarding",
+      "marketing",
+      "time_tracking"
+    ]
+  },
+  "tools": [
+    {
+      "tool_id": "figma",
+      "service_name": "Figma",
+      "aliases": [
+        "피그마",
+        "figma",
+        "FIGMA"
+      ],
+      "category_tags": [
+        "design",
+        "prototyping",
+        "whiteboarding"
+      ],
+      "pricing_tiers": [
+        {
+          "tier_name": "Starter",
+          "price_monthly_per_seat_krw": 0,
+          "price_annual_per_seat_krw": null,
+          "tier_features": [
+            "design"
+          ]
+        },
+        {
+          "tier_name": "Professional",
+          "price_monthly_per_seat_krw": 18000,
+          "price_annual_per_seat_krw": 172800,
+          "tier_features": [
+            "design",
+            "prototyping",
+            "guest_sharing"
+          ]
+        },
+        {
+          "tier_name": "Organization",
+          "price_monthly_per_seat_krw": 55000,
+          "price_annual_per_seat_krw": 528000,
+          "tier_features": [
+            "design",
+            "prototyping",
+            "guest_sharing",
+            "whiteboarding"
+          ]
+        }
+      ]
+    },
+    {
+      "tool_id": "notion",
+      "service_name": "Notion",
+      "aliases": [
+        "노션",
+        "notion",
+        "NOTION"
+      ],
+      "category_tags": [
+        "documentation",
+        "project_management",
+        "knowledge_management"
+      ],
+      "pricing_tiers": [
+        {
+          "tier_name": "Free",
+          "price_monthly_per_seat_krw": 0,
+          "price_annual_per_seat_krw": null,
+          "tier_features": [
+            "documentation"
+          ]
+        },
+        {
+          "tier_name": "Plus",
+          "price_monthly_per_seat_krw": 14000,
+          "price_annual_per_seat_krw": 134400,
+          "tier_features": [
+            "documentation",
+            "project_management",
+            "guest_sharing"
+          ]
+        },
+        {
+          "tier_name": "Business",
+          "price_monthly_per_seat_krw": 26000,
+          "price_annual_per_seat_krw": 249600,
+          "tier_features": [
+            "documentation",
+            "project_management",
+            "knowledge_management",
+            "guest_sharing"
+          ]
+        }
+      ]
+    },
+    {
+      "tool_id": "slack",
+      "service_name": "Slack",
+      "aliases": [
+        "슬랙",
+        "slack",
+        "SLACK"
+      ],
+      "category_tags": [
+        "chat",
+        "file_sharing",
+        "automation"
+      ],
+      "pricing_tiers": [
+        {
+          "tier_name": "Free",
+          "price_monthly_per_seat_krw": 0,
+          "price_annual_per_seat_krw": null,
+          "tier_features": [
+            "chat"
+          ]
+        },
+        {
+          "tier_name": "Pro",
+          "price_monthly_per_seat_krw": 11000,
+          "price_annual_per_seat_krw": 105600,
+          "tier_features": [
+            "chat",
+            "file_sharing"
+          ]
+        },
+        {
+          "tier_name": "Business+",
+          "price_monthly_per_seat_krw": 22000,
+          "price_annual_per_seat_krw": 211200,
+          "tier_features": [
+            "chat",
+            "file_sharing",
+            "automation"
+          ]
+        }
+      ]
+    },
+    {
+      "tool_id": "jira",
+      "service_name": "Jira",
+      "aliases": [
+        "지라",
+        "jira",
+        "JIRA"
+      ],
+      "category_tags": [
+        "project_management",
+        "task_tracking",
+        "development"
+      ],
+      "pricing_tiers": [
+        {
+          "tier_name": "Free",
+          "price_monthly_per_seat_krw": 0,
+          "price_annual_per_seat_krw": null,
+          "tier_features": [
+            "task_tracking"
+          ]
+        },
+        {
+          "tier_name": "Standard",
+          "price_monthly_per_seat_krw": 10000,
+          "price_annual_per_seat_krw": 96000,
+          "tier_features": [
+            "project_management",
+            "task_tracking"
+          ]
+        },
+        {
+          "tier_name": "Premium",
+          "price_monthly_per_seat_krw": 22000,
+          "price_annual_per_seat_krw": 211200,
+          "tier_features": [
+            "project_management",
+            "task_tracking",
+            "automation"
+          ]
+        }
+      ]
+    },
+    {
+      "tool_id": "confluence",
+      "service_name": "Confluence",
+      "aliases": [
+        "컨플루언스",
+        "confluence"
+      ],
+      "category_tags": [
+        "documentation",
+        "knowledge_management",
+        "guest_sharing"
+      ],
+      "pricing_tiers": [
+        {
+          "tier_name": "Free",
+          "price_monthly_per_seat_krw": 0,
+          "price_annual_per_seat_krw": null,
+          "tier_features": [
+            "documentation"
+          ]
+        },
+        {
+          "tier_name": "Standard",
+          "price_monthly_per_seat_krw": 8000,
+          "price_annual_per_seat_krw": 76800,
+          "tier_features": [
+            "documentation",
+            "knowledge_management"
+          ]
+        },
+        {
+          "tier_name": "Premium",
+          "price_monthly_per_seat_krw": 16000,
+          "price_annual_per_seat_krw": 153600,
+          "tier_features": [
+            "documentation",
+            "knowledge_management",
+            "guest_sharing"
+          ]
+        }
+      ]
+    },
+    {
+      "tool_id": "trello",
+      "service_name": "Trello",
+      "aliases": [
+        "트렐로",
+        "trello"
+      ],
+      "category_tags": [
+        "project_management",
+        "task_tracking"
+      ],
+      "pricing_tiers": [
+        {
+          "tier_name": "Free",
+          "price_monthly_per_seat_krw": 0,
+          "price_annual_per_seat_krw": null,
+          "tier_features": [
+            "task_tracking"
+          ]
+        },
+        {
+          "tier_name": "Standard",
+          "price_monthly_per_seat_krw": 7000,
+          "price_annual_per_seat_krw": 67200,
+          "tier_features": [
+            "project_management",
+            "task_tracking"
+          ]
+        },
+        {
+          "tier_name": "Premium",
+          "price_monthly_per_seat_krw": 14000,
+          "price_annual_per_seat_krw": 134400,
+          "tier_features": [
+            "project_management",
+            "task_tracking",
+            "automation"
+          ]
+        }
+      ]
+    },
+    {
+      "tool_id": "asana",
+      "service_name": "Asana",
+      "aliases": [
+        "아사나",
+        "asana"
+      ],
+      "category_tags": [
+        "project_management",
+        "task_tracking",
+        "automation"
+      ],
+      "pricing_tiers": [
+        {
+          "tier_name": "Personal",
+          "price_monthly_per_seat_krw": 0,
+          "price_annual_per_seat_krw": null,
+          "tier_features": [
+            "task_tracking"
+          ]
+        },
+        {
+          "tier_name": "Starter",
+          "price_monthly_per_seat_krw": 14000,
+          "price_annual_per_seat_krw": 134400,
+          "tier_features": [
+            "project_management",
+            "task_tracking"
+          ]
+        },
+        {
+          "tier_name": "Advanced",
+          "price_monthly_per_seat_krw": 32000,
+          "price_annual_per_seat_krw": 307200,
+          "tier_features": [
+            "project_management",
+            "task_tracking",
+            "automation"
+          ]
+        }
+      ]
+    },
+    {
+      "tool_id": "monday",
+      "service_name": "monday.com",
+      "aliases": [
+        "먼데이",
+        "monday",
+        "monday.com"
+      ],
+      "category_tags": [
+        "project_management",
+        "task_tracking",
+        "automation"
+      ],
+      "pricing_tiers": [
+        {
+          "tier_name": "Basic",
+          "price_monthly_per_seat_krw": 12000,
+          "price_annual_per_seat_krw": 115200,
+          "tier_features": [
+            "project_management",
+            "task_tracking"
+          ]
+        },
+        {
+          "tier_name": "Standard",
+          "price_monthly_per_seat_krw": 16000,
+          "price_annual_per_seat_krw": 153600,
+          "tier_features": [
+            "project_management",
+            "task_tracking",
+            "automation"
+          ]
+        },
+        {
+          "tier_name": "Pro",
+          "price_monthly_per_seat_krw": 26000,
+          "price_annual_per_seat_krw": 249600,
+          "tier_features": [
+            "project_management",
+            "task_tracking",
+            "automation",
+            "analytics"
+          ]
+        }
+      ]
+    },
+    {
+      "tool_id": "clickup",
+      "service_name": "ClickUp",
+      "aliases": [
+        "클릭업",
+        "clickup"
+      ],
+      "category_tags": [
+        "project_management",
+        "task_tracking",
+        "documentation"
+      ],
+      "pricing_tiers": [
+        {
+          "tier_name": "Free Forever",
+          "price_monthly_per_seat_krw": 0,
+          "price_annual_per_seat_krw": null,
+          "tier_features": [
+            "task_tracking"
+          ]
+        },
+        {
+          "tier_name": "Unlimited",
+          "price_monthly_per_seat_krw": 10000,
+          "price_annual_per_seat_krw": 96000,
+          "tier_features": [
+            "project_management",
+            "task_tracking",
+            "documentation"
+          ]
+        },
+        {
+          "tier_name": "Business",
+          "price_monthly_per_seat_krw": 19000,
+          "price_annual_per_seat_krw": 182400,
+          "tier_features": [
+            "project_management",
+            "task_tracking",
+            "documentation",
+            "automation"
+          ]
+        }
+      ]
+    },
+    {
+      "tool_id": "linear",
+      "service_name": "Linear",
+      "aliases": [
+        "리니어",
+        "linear"
+      ],
+      "category_tags": [
+        "project_management",
+        "task_tracking",
+        "development"
+      ],
+      "pricing_tiers": [
+        {
+          "tier_name": "Free",
+          "price_monthly_per_seat_krw": 0,
+          "price_annual_per_seat_krw": null,
+          "tier_features": [
+            "task_tracking"
+          ]
+        },
+        {
+          "tier_name": "Basic",
+          "price_monthly_per_seat_krw": 10000,
+          "price_annual_per_seat_krw": 96000,
+          "tier_features": [
+            "project_management",
+            "task_tracking"
+          ]
+        },
+        {
+          "tier_name": "Business",
+          "price_monthly_per_seat_krw": 18000,
+          "price_annual_per_seat_krw": 172800,
+          "tier_features": [
+            "project_management",
+            "task_tracking",
+            "development"
+          ]
+        }
+      ]
+    },
+    {
+      "tool_id": "miro",
+      "service_name": "Miro",
+      "aliases": [
+        "미로",
+        "miro"
+      ],
+      "category_tags": [
+        "whiteboarding",
+        "prototyping",
+        "guest_sharing"
+      ],
+      "pricing_tiers": [
+        {
+          "tier_name": "Free",
+          "price_monthly_per_seat_krw": 0,
+          "price_annual_per_seat_krw": null,
+          "tier_features": [
+            "whiteboarding"
+          ]
+        },
+        {
+          "tier_name": "Starter",
+          "price_monthly_per_seat_krw": 10000,
+          "price_annual_per_seat_krw": 96000,
+          "tier_features": [
+            "whiteboarding",
+            "guest_sharing"
+          ]
+        },
+        {
+          "tier_name": "Business",
+          "price_monthly_per_seat_krw": 20000,
+          "price_annual_per_seat_krw": 192000,
+          "tier_features": [
+            "whiteboarding",
+            "prototyping",
+            "guest_sharing"
+          ]
+        }
+      ]
+    },
+    {
+      "tool_id": "canva",
+      "service_name": "Canva",
+      "aliases": [
+        "캔바",
+        "canva"
+      ],
+      "category_tags": [
+        "design",
+        "marketing"
+      ],
+      "pricing_tiers": [
+        {
+          "tier_name": "Free",
+          "price_monthly_per_seat_krw": 0,
+          "price_annual_per_seat_krw": null,
+          "tier_features": [
+            "design"
+          ]
+        },
+        {
+          "tier_name": "Pro",
+          "price_monthly_per_seat_krw": 17000,
+          "price_annual_per_seat_krw": 163200,
+          "tier_features": [
+            "design",
+            "marketing"
+          ]
+        },
+        {
+          "tier_name": "Teams",
+          "price_monthly_per_seat_krw": 24000,
+          "price_annual_per_seat_krw": 230400,
+          "tier_features": [
+            "design",
+            "marketing",
+            "guest_sharing"
+          ]
+        }
+      ]
+    },
+    {
+      "tool_id": "adobe_creative_cloud",
+      "service_name": "Adobe Creative Cloud",
+      "aliases": [
+        "어도비",
+        "어도비 크리에이티브 클라우드",
+        "adobe cc",
+        "creative cloud"
+      ],
+      "category_tags": [
+        "design",
+        "writing"
+      ],
+      "pricing_tiers": [
+        {
+          "tier_name": "Photography",
+          "price_monthly_per_seat_krw": 15000,
+          "price_annual_per_seat_krw": 144000,
+          "tier_features": [
+            "design"
+          ]
+        },
+        {
+          "tier_name": "Single App",
+          "price_monthly_per_seat_krw": 30000,
+          "price_annual_per_seat_krw": 288000,
+          "tier_features": [
+            "design"
+          ]
+        },
+        {
+          "tier_name": "All Apps",
+          "price_monthly_per_seat_krw": 85000,
+          "price_annual_per_seat_krw": 816000,
+          "tier_features": [
+            "design",
+            "writing"
+          ]
+        }
+      ]
+    },
+    {
+      "tool_id": "google_workspace",
+      "service_name": "Google Workspace",
+      "aliases": [
+        "구글 워크스페이스",
+        "google workspace",
+        "G Suite"
+      ],
+      "category_tags": [
+        "documentation",
+        "file_storage",
+        "file_sharing",
+        "video_conferencing"
+      ],
+      "pricing_tiers": [
+        {
+          "tier_name": "Business Starter",
+          "price_monthly_per_seat_krw": 9000,
+          "price_annual_per_seat_krw": 86400,
+          "tier_features": [
+            "documentation",
+            "file_storage",
+            "video_conferencing"
+          ]
+        },
+        {
+          "tier_name": "Business Standard",
+          "price_monthly_per_seat_krw": 18000,
+          "price_annual_per_seat_krw": 172800,
+          "tier_features": [
+            "documentation",
+            "file_storage",
+            "file_sharing",
+            "video_conferencing"
+          ]
+        },
+        {
+          "tier_name": "Business Plus",
+          "price_monthly_per_seat_krw": 27000,
+          "price_annual_per_seat_krw": 259200,
+          "tier_features": [
+            "documentation",
+            "file_storage",
+            "file_sharing",
+            "video_conferencing",
+            "security"
+          ]
+        }
+      ]
+    },
+    {
+      "tool_id": "microsoft_365",
+      "service_name": "Microsoft 365",
+      "aliases": [
+        "마이크로소프트 365",
+        "오피스 365",
+        "microsoft 365",
+        "office 365"
+      ],
+      "category_tags": [
+        "documentation",
+        "file_storage",
+        "file_sharing",
+        "security"
+      ],
+      "pricing_tiers": [
+        {
+          "tier_name": "Business Basic",
+          "price_monthly_per_seat_krw": 9000,
+          "price_annual_per_seat_krw": 86400,
+          "tier_features": [
+            "documentation",
+            "file_storage",
+            "file_sharing"
+          ]
+        },
+        {
+          "tier_name": "Business Standard",
+          "price_monthly_per_seat_krw": 17000,
+          "price_annual_per_seat_krw": 163200,
+          "tier_features": [
+            "documentation",
+            "file_storage",
+            "file_sharing"
+          ]
+        },
+        {
+          "tier_name": "Business Premium",
+          "price_monthly_per_seat_krw": 30000,
+          "price_annual_per_seat_krw": 288000,
+          "tier_features": [
+            "documentation",
+            "file_storage",
+            "file_sharing",
+            "security"
+          ]
+        }
+      ]
+    },
+    {
+      "tool_id": "zoom",
+      "service_name": "Zoom",
+      "aliases": [
+        "줌",
+        "zoom"
+      ],
+      "category_tags": [
+        "video_conferencing",
+        "chat"
+      ],
+      "pricing_tiers": [
+        {
+          "tier_name": "Basic",
+          "price_monthly_per_seat_krw": 0,
+          "price_annual_per_seat_krw": null,
+          "tier_features": [
+            "video_conferencing"
+          ]
+        },
+        {
+          "tier_name": "Pro",
+          "price_monthly_per_seat_krw": 22000,
+          "price_annual_per_seat_krw": 211200,
+          "tier_features": [
+            "video_conferencing",
+            "chat"
+          ]
+        },
+        {
+          "tier_name": "Business",
+          "price_monthly_per_seat_krw": 30000,
+          "price_annual_per_seat_krw": 288000,
+          "tier_features": [
+            "video_conferencing",
+            "chat",
+            "file_sharing"
+          ]
+        }
+      ]
+    },
+    {
+      "tool_id": "dropbox",
+      "service_name": "Dropbox",
+      "aliases": [
+        "드롭박스",
+        "dropbox"
+      ],
+      "category_tags": [
+        "file_storage",
+        "file_sharing",
+        "security"
+      ],
+      "pricing_tiers": [
+        {
+          "tier_name": "Basic",
+          "price_monthly_per_seat_krw": 0,
+          "price_annual_per_seat_krw": null,
+          "tier_features": [
+            "file_storage"
+          ]
+        },
+        {
+          "tier_name": "Plus",
+          "price_monthly_per_seat_krw": 15000,
+          "price_annual_per_seat_krw": 144000,
+          "tier_features": [
+            "file_storage",
+            "file_sharing"
+          ]
+        },
+        {
+          "tier_name": "Professional",
+          "price_monthly_per_seat_krw": 24000,
+          "price_annual_per_seat_krw": 230400,
+          "tier_features": [
+            "file_storage",
+            "file_sharing",
+            "security"
+          ]
+        }
+      ]
+    },
+    {
+      "tool_id": "github",
+      "service_name": "GitHub",
+      "aliases": [
+        "깃허브",
+        "github"
+      ],
+      "category_tags": [
+        "development",
+        "version_control",
+        "automation"
+      ],
+      "pricing_tiers": [
+        {
+          "tier_name": "Free",
+          "price_monthly_per_seat_krw": 0,
+          "price_annual_per_seat_krw": null,
+          "tier_features": [
+            "development",
+            "version_control"
+          ]
+        },
+        {
+          "tier_name": "Team",
+          "price_monthly_per_seat_krw": 6000,
+          "price_annual_per_seat_krw": 57600,
+          "tier_features": [
+            "development",
+            "version_control",
+            "automation"
+          ]
+        },
+        {
+          "tier_name": "Enterprise",
+          "price_monthly_per_seat_krw": 24000,
+          "price_annual_per_seat_krw": 230400,
+          "tier_features": [
+            "development",
+            "version_control",
+            "automation",
+            "security"
+          ]
+        }
+      ]
+    },
+    {
+      "tool_id": "gitlab",
+      "service_name": "GitLab",
+      "aliases": [
+        "깃랩",
+        "gitlab"
+      ],
+      "category_tags": [
+        "development",
+        "version_control",
+        "automation"
+      ],
+      "pricing_tiers": [
+        {
+          "tier_name": "Free",
+          "price_monthly_per_seat_krw": 0,
+          "price_annual_per_seat_krw": null,
+          "tier_features": [
+            "development",
+            "version_control"
+          ]
+        },
+        {
+          "tier_name": "Premium",
+          "price_monthly_per_seat_krw": 35000,
+          "price_annual_per_seat_krw": 336000,
+          "tier_features": [
+            "development",
+            "version_control",
+            "automation"
+          ]
+        },
+        {
+          "tier_name": "Ultimate",
+          "price_monthly_per_seat_krw": 120000,
+          "price_annual_per_seat_krw": 1152000,
+          "tier_features": [
+            "development",
+            "version_control",
+            "automation",
+            "security"
+          ]
+        }
+      ]
+    },
+    {
+      "tool_id": "bitbucket",
+      "service_name": "Bitbucket",
+      "aliases": [
+        "비트버킷",
+        "bitbucket"
+      ],
+      "category_tags": [
+        "development",
+        "version_control"
+      ],
+      "pricing_tiers": [
+        {
+          "tier_name": "Free",
+          "price_monthly_per_seat_krw": 0,
+          "price_annual_per_seat_krw": null,
+          "tier_features": [
+            "development",
+            "version_control"
+          ]
+        },
+        {
+          "tier_name": "Standard",
+          "price_monthly_per_seat_krw": 7000,
+          "price_annual_per_seat_krw": 67200,
+          "tier_features": [
+            "development",
+            "version_control"
+          ]
+        },
+        {
+          "tier_name": "Premium",
+          "price_monthly_per_seat_krw": 14000,
+          "price_annual_per_seat_krw": 134400,
+          "tier_features": [
+            "development",
+            "version_control",
+            "security"
+          ]
+        }
+      ]
+    },
+    {
+      "tool_id": "chatgpt_team",
+      "service_name": "ChatGPT Team",
+      "aliases": [
+        "챗지피티 팀",
+        "chatgpt team",
+        "chatgpt business"
+      ],
+      "category_tags": [
+        "ai_assistant",
+        "writing"
+      ],
+      "pricing_tiers": [
+        {
+          "tier_name": "Free",
+          "price_monthly_per_seat_krw": 0,
+          "price_annual_per_seat_krw": null,
+          "tier_features": [
+            "ai_assistant"
+          ]
+        },
+        {
+          "tier_name": "Business",
+          "price_monthly_per_seat_krw": 35000,
+          "price_annual_per_seat_krw": 336000,
+          "tier_features": [
+            "ai_assistant",
+            "writing",
+            "security"
+          ]
+        }
+      ]
+    },
+    {
+      "tool_id": "claude_team",
+      "service_name": "Claude Team",
+      "aliases": [
+        "클로드 팀",
+        "claude team"
+      ],
+      "category_tags": [
+        "ai_assistant",
+        "writing"
+      ],
+      "pricing_tiers": [
+        {
+          "tier_name": "Free",
+          "price_monthly_per_seat_krw": 0,
+          "price_annual_per_seat_krw": null,
+          "tier_features": [
+            "ai_assistant"
+          ]
+        },
+        {
+          "tier_name": "Team",
+          "price_monthly_per_seat_krw": 35000,
+          "price_annual_per_seat_krw": 336000,
+          "tier_features": [
+            "ai_assistant",
+            "writing",
+            "guest_sharing"
+          ]
+        }
+      ]
+    },
+    {
+      "tool_id": "grammarly",
+      "service_name": "Grammarly",
+      "aliases": [
+        "그래멀리",
+        "grammarly"
+      ],
+      "category_tags": [
+        "writing"
+      ],
+      "pricing_tiers": [
+        {
+          "tier_name": "Free",
+          "price_monthly_per_seat_krw": 0,
+          "price_annual_per_seat_krw": null,
+          "tier_features": [
+            "writing"
+          ]
+        },
+        {
+          "tier_name": "Pro",
+          "price_monthly_per_seat_krw": 20000,
+          "price_annual_per_seat_krw": 192000,
+          "tier_features": [
+            "writing"
+          ]
+        },
+        {
+          "tier_name": "Business",
+          "price_monthly_per_seat_krw": 25000,
+          "price_annual_per_seat_krw": 240000,
+          "tier_features": [
+            "writing",
+            "security"
+          ]
+        }
+      ]
+    },
+    {
+      "tool_id": "loom",
+      "service_name": "Loom",
+      "aliases": [
+        "룸",
+        "loom"
+      ],
+      "category_tags": [
+        "video_conferencing",
+        "documentation"
+      ],
+      "pricing_tiers": [
+        {
+          "tier_name": "Starter",
+          "price_monthly_per_seat_krw": 0,
+          "price_annual_per_seat_krw": null,
+          "tier_features": [
+            "video_conferencing"
+          ]
+        },
+        {
+          "tier_name": "Business",
+          "price_monthly_per_seat_krw": 16000,
+          "price_annual_per_seat_krw": 153600,
+          "tier_features": [
+            "video_conferencing",
+            "documentation"
+          ]
+        },
+        {
+          "tier_name": "Business+AI",
+          "price_monthly_per_seat_krw": 24000,
+          "price_annual_per_seat_krw": 230400,
+          "tier_features": [
+            "video_conferencing",
+            "documentation",
+            "ai_assistant"
+          ]
+        }
+      ]
+    },
+    {
+      "tool_id": "airtable",
+      "service_name": "Airtable",
+      "aliases": [
+        "에어테이블",
+        "airtable"
+      ],
+      "category_tags": [
+        "database",
+        "project_management",
+        "automation"
+      ],
+      "pricing_tiers": [
+        {
+          "tier_name": "Free",
+          "price_monthly_per_seat_krw": 0,
+          "price_annual_per_seat_krw": null,
+          "tier_features": [
+            "database"
+          ]
+        },
+        {
+          "tier_name": "Team",
+          "price_monthly_per_seat_krw": 24000,
+          "price_annual_per_seat_krw": 230400,
+          "tier_features": [
+            "database",
+            "project_management"
+          ]
+        },
+        {
+          "tier_name": "Business",
+          "price_monthly_per_seat_krw": 54000,
+          "price_annual_per_seat_krw": 518400,
+          "tier_features": [
+            "database",
+            "project_management",
+            "automation"
+          ]
+        }
+      ]
+    },
+    {
+      "tool_id": "webflow",
+      "service_name": "Webflow",
+      "aliases": [
+        "웹플로우",
+        "webflow"
+      ],
+      "category_tags": [
+        "website_building",
+        "design",
+        "marketing"
+      ],
+      "pricing_tiers": [
+        {
+          "tier_name": "Basic",
+          "price_monthly_per_seat_krw": 18000,
+          "price_annual_per_seat_krw": 172800,
+          "tier_features": [
+            "website_building"
+          ]
+        },
+        {
+          "tier_name": "CMS",
+          "price_monthly_per_seat_krw": 29000,
+          "price_annual_per_seat_krw": 278400,
+          "tier_features": [
+            "website_building",
+            "marketing"
+          ]
+        },
+        {
+          "tier_name": "Business",
+          "price_monthly_per_seat_krw": 55000,
+          "price_annual_per_seat_krw": 528000,
+          "tier_features": [
+            "website_building",
+            "design",
+            "marketing"
+          ]
+        }
+      ]
+    },
+    {
+      "tool_id": "framer",
+      "service_name": "Framer",
+      "aliases": [
+        "프레이머",
+        "framer"
+      ],
+      "category_tags": [
+        "website_building",
+        "design",
+        "prototyping"
+      ],
+      "pricing_tiers": [
+        {
+          "tier_name": "Free",
+          "price_monthly_per_seat_krw": 0,
+          "price_annual_per_seat_krw": null,
+          "tier_features": [
+            "design"
+          ]
+        },
+        {
+          "tier_name": "Basic",
+          "price_monthly_per_seat_krw": 15000,
+          "price_annual_per_seat_krw": 144000,
+          "tier_features": [
+            "website_building",
+            "design"
+          ]
+        },
+        {
+          "tier_name": "Pro",
+          "price_monthly_per_seat_krw": 30000,
+          "price_annual_per_seat_krw": 288000,
+          "tier_features": [
+            "website_building",
+            "design",
+            "prototyping"
+          ]
+        }
+      ]
+    },
+    {
+      "tool_id": "1password",
+      "service_name": "1Password",
+      "aliases": [
+        "원패스워드",
+        "1password",
+        "1 password"
+      ],
+      "category_tags": [
+        "password_management",
+        "security"
+      ],
+      "pricing_tiers": [
+        {
+          "tier_name": "Teams Starter Pack",
+          "price_monthly_per_seat_krw": 24000,
+          "price_annual_per_seat_krw": 230400,
+          "tier_features": [
+            "password_management",
+            "security"
+          ]
+        },
+        {
+          "tier_name": "Business",
+          "price_monthly_per_seat_krw": 11000,
+          "price_annual_per_seat_krw": 105600,
+          "tier_features": [
+            "password_management",
+            "security"
+          ]
+        }
+      ]
+    },
+    {
+      "tool_id": "zapier",
+      "service_name": "Zapier",
+      "aliases": [
+        "재피어",
+        "zapier"
+      ],
+      "category_tags": [
+        "automation"
+      ],
+      "pricing_tiers": [
+        {
+          "tier_name": "Free",
+          "price_monthly_per_seat_krw": 0,
+          "price_annual_per_seat_krw": null,
+          "tier_features": [
+            "automation"
+          ]
+        },
+        {
+          "tier_name": "Professional",
+          "price_monthly_per_seat_krw": 30000,
+          "price_annual_per_seat_krw": 288000,
+          "tier_features": [
+            "automation"
+          ]
+        },
+        {
+          "tier_name": "Team",
+          "price_monthly_per_seat_krw": 65000,
+          "price_annual_per_seat_krw": 624000,
+          "tier_features": [
+            "automation",
+            "guest_sharing"
+          ]
+        }
+      ]
+    },
+    {
+      "tool_id": "microsoft_teams",
+      "service_name": "Microsoft Teams",
+      "aliases": [
+        "팀즈",
+        "마이크로소프트 팀즈",
+        "microsoft teams"
+      ],
+      "category_tags": [
+        "chat",
+        "video_conferencing",
+        "file_sharing"
+      ],
+      "pricing_tiers": [
+        {
+          "tier_name": "Free",
+          "price_monthly_per_seat_krw": 0,
+          "price_annual_per_seat_krw": null,
+          "tier_features": [
+            "chat",
+            "video_conferencing"
+          ]
+        },
+        {
+          "tier_name": "Essentials",
+          "price_monthly_per_seat_krw": 6000,
+          "price_annual_per_seat_krw": 57600,
+          "tier_features": [
+            "chat",
+            "video_conferencing"
+          ]
+        },
+        {
+          "tier_name": "Business Standard",
+          "price_monthly_per_seat_krw": 17000,
+          "price_annual_per_seat_krw": 163200,
+          "tier_features": [
+            "chat",
+            "video_conferencing",
+            "file_sharing"
+          ]
+        }
+      ]
+    }
+  ]
+}
