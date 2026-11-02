@@ -69,6 +69,3 @@ service_name(str);툴 이름, inactive_seats(int);유휴 좌석, wasted_spend(in
 
 - 수정 내역: 커밋 eb402c9
 - 테스트 결과 : pytest 3 passed
-- A·B 수정(529a2a7): 빈 DataFrame이라도 필수 열이 없으면 ValueError가 나도록 검사 순서 변경(test_t07로 확인), 미사용 parse_amount 삭제
-- C 유지: department 표기 통일은 팀 확인 대기
-- 테스트 결과: T01~T05와 T07 통과, T06은 샘플 파일 부재로 skip
