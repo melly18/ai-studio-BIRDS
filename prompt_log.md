@@ -43,11 +43,9 @@ seat_count, active_users, billing_amount_krw, card_holder_pii
 4. 0바이트 파일: ValueError
 ```
 - 생성 코드 위치: 커밋 2ab8303
-- 코드 리딩에서 발견한 결함:
-  1) ...
-  2) ...
-- 수정 내역: 커밋 해시
-- 테스트 결과: pytest N passed
+- 코드 리딩에서 발견한 결함: 없음
+- 수정 내역: 커밋 ba46cad
+- 테스트 결과: pytest 4 passed
 
 ## [data_processing] load_saas_catalog() - 2026-11-02, 작성자: 차세연
 - 사용 도구: GitHub Copilot Chat
@@ -103,12 +101,11 @@ JSON 구조(요약):
 4. 존재하지 않는 경로: FileNotFoundError
 5. 깨진 JSON 문자열 파일: ValueError
 ```
-- 생성 코드 위치: 커밋 해시 (수정 전 원본)
+- 생성 코드 위치: 커밋 9040025
 - 코드 리딩에서 발견한 결함:
-  1) ...
-  2) ...
-- 수정 내역: 커밋 해시
-- 테스트 결과: pytest N passed
+  1) UnicodeDecodeError는 별도로 처리하지 않아 잘못된 인코딩 파일에서 ValueError가 아닌 UnicodeDecodeError가 발생함. 문서의 예외 명세와 일치시키려면 예외 처리 추가 필요.
+- 수정 내역: 커밋 7a96602
+- 테스트 결과: pytest 5 passed
 
 ## [quant_analysis] calculate_seat_leakage - 2026-11-01, 작성자: 김서연
 - 사용 도구: GitHub Copilot Chat

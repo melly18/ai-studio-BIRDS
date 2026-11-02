@@ -1,9 +1,8 @@
 from pathlib import Path
 import pytest
 import pandas as pd
-from data_processing import load_billing_csv, mask_pii_data
+from data_processing import load_billing_csv, load_saas_catalog, mask_pii_data
 
-# load_billing_csv
 HERE = Path(__file__).parent
 BILLING_SAMPLE = HERE / "payment_history_raw_100_sample.csv"
 CATALOG_SAMPLE = HERE / "saas_catalog_30_sample.json"
@@ -39,6 +38,7 @@ def _tool(**overrides) -> dict:
     tool.update(overrides)
     return tool
 
+# load_billing_csv
 def test_billing_normal_sample():
     """정상: 실제 샘플 100행이 원본 문자열 그대로 로드된다."""
     df = load_billing_csv(str(BILLING_SAMPLE))
@@ -50,7 +50,6 @@ def test_billing_normal_sample():
     assert df.iloc[6]["billing_amount_krw"] == "1,656,000"  # 쉼표 제거 금지
     assert all(isinstance(v, str) for v in df.to_numpy().ravel())  # 전부 str
 
-
 def test_billing_header_only_returns_empty_frame(tmp_path):
     """경계: 헤더만 있는 CSV는 예외 없이 컬럼만 있는 빈 DataFrame."""
     path = tmp_path / "header_only.csv"
@@ -61,12 +60,10 @@ def test_billing_header_only_returns_empty_frame(tmp_path):
     assert len(df) == 0
     assert list(df.columns) == BILLING_COLUMNS
 
-
 def test_billing_file_not_found():
     """예외: 존재하지 않는 경로는 FileNotFoundError."""
     with pytest.raises(FileNotFoundError):
         load_billing_csv("no_such_file.csv")
-
 
 def test_billing_zero_byte_file_raises_value_error(tmp_path):
     """예외: 0바이트 파일은 ValueError."""
@@ -77,81 +74,77 @@ def test_billing_zero_byte_file_raises_value_error(tmp_path):
         load_billing_csv(str(path))
 
 
-# # load_saas_catalog
-# def test_catalog_normal_sample():
-#     """정상: 실제 샘플 카탈로그 30개 도구가 원본 그대로 로드된다."""
-#     import json
+# load_saas_catalog
+def test_catalog_normal_sample():
+    """정상: 실제 샘플 카탈로그 30개 도구가 원본 그대로 로드된다."""
+    import json
  
-#     result = load_saas_catalog(str(CATALOG_SAMPLE))
+    result = load_saas_catalog(str(CATALOG_SAMPLE))
  
-#     assert len(result["tools"]) == 30
-#     assert result["meta"]["catalog_version"] == "v1.0"
-#     assert result["tools"][0]["service_name"] == "Figma"
-#     with open(CATALOG_SAMPLE, encoding="utf-8") as f:
-#         assert result == json.load(f)  # 변환·추가 없이 원본과 동일
+    assert len(result["tools"]) == 30
+    assert result["meta"]["catalog_version"] == "v1.0"
+    assert result["tools"][0]["service_name"] == "Figma"
+    with open(CATALOG_SAMPLE, encoding="utf-8") as f:
+        assert result == json.load(f)  # 변환·추가 없이 원본과 동일
  
+def test_catalog_empty_tools_allowed(tmp_path):
+    """경계: 필수 키는 있으나 tools가 빈 리스트면 그대로 반환."""
+    import json
  
-# def test_catalog_empty_tools_allowed(tmp_path):
-#     """경계: 필수 키는 있으나 tools가 빈 리스트면 그대로 반환."""
-#     import json
+    path = tmp_path / "empty_tools.json"
+    path.write_text(json.dumps({"meta": {}, "tools": []}), encoding="utf-8")
  
-#     path = tmp_path / "empty_tools.json"
-#     path.write_text(json.dumps({"meta": {}, "tools": []}), encoding="utf-8")
+    assert load_saas_catalog(str(path)) == {"meta": {}, "tools": []}
  
-#     assert load_saas_catalog(str(path)) == {"meta": {}, "tools": []}
+def test_catalog_missing_tool_key_raises(tmp_path):
+    """예외: tools[0]에서 aliases가 빠지면 ValueError, 메시지에 aliases 포함."""
+    import json
  
+    tool = _tool()
+    del tool["aliases"]
+    path = tmp_path / "missing_aliases.json"
+    path.write_text(json.dumps({"meta": {}, "tools": [tool]}), encoding="utf-8")
  
-# def test_catalog_missing_tool_key_raises(tmp_path):
-#     """예외: tools[0]에서 aliases가 빠지면 ValueError, 메시지에 aliases 포함."""
-#     import json
+    with pytest.raises(ValueError, match="aliases"):
+        load_saas_catalog(str(path))
  
-#     tool = _tool()
-#     del tool["aliases"]
-#     path = tmp_path / "missing_aliases.json"
-#     path.write_text(json.dumps({"meta": {}, "tools": [tool]}), encoding="utf-8")
+def test_catalog_file_not_found():
+    """예외: 존재하지 않는 경로는 FileNotFoundError."""
+    with pytest.raises(FileNotFoundError):
+        load_saas_catalog("no_such_catalog.json")
  
-#     with pytest.raises(ValueError, match="aliases"):
-#         load_saas_catalog(str(path))
+def test_catalog_broken_json_raises_value_error(tmp_path):
+    """예외: JSON 문법 오류는 ValueError."""
+    path = tmp_path / "broken.json"
+    path.write_text('{"meta": {}, "tools": [', encoding="utf-8")
  
- 
-# def test_catalog_file_not_found():
-#     """예외: 존재하지 않는 경로는 FileNotFoundError."""
-#     with pytest.raises(FileNotFoundError):
-#         load_saas_catalog("no_such_catalog.json")
- 
- 
-# def test_catalog_broken_json_raises_value_error(tmp_path):
-#     """예외: JSON 문법 오류는 ValueError."""
-#     path = tmp_path / "broken.json"
-#     path.write_text('{"meta": {}, "tools": [', encoding="utf-8")
- 
-#     with pytest.raises(ValueError):
-#         load_saas_catalog(str(path))
+    with pytest.raises(ValueError):
+        load_saas_catalog(str(path))
     
 
-# # mask_pii_data
-# def test_mask_pii_normal():
-#     # 정상 케이스: pii 열이 존재하는 경우
-#     df = pd.DataFrame({
-#         "tx_id": ["T1", "T2"],
-#         "card_holder_pii": ["홍길동 / hong@test.kr / 1234", "김철수 / kim@test.kr / 5678"]
-#     })
-#     result = mask_pii_data(df)
-#     assert result["card_holder_pii"].iloc[0] == "[REDACTED]"
-#     assert result["card_holder_pii"].iloc[1] == "[REDACTED]"
-#     # 원본이 훼손되지 않았는지 확인
-#     assert df["card_holder_pii"].iloc[0] != "[REDACTED]"
+# mask_pii_data
+def test_mask_pii_normal():
+    # 정상 케이스: pii 열이 존재하는 경우
+    df = pd.DataFrame({
+        "tx_id": ["T1", "T2"],
+        "card_holder_pii": ["홍길동 / hong@test.kr / 1234", "김철수 / kim@test.kr / 5678"]
+    })
+    result = mask_pii_data(df)
+    assert result["card_holder_pii"].iloc[0] == "[REDACTED]"
+    assert result["card_holder_pii"].iloc[1] == "[REDACTED]"
+    # 원본이 훼손되지 않았는지 확인
+    assert df["card_holder_pii"].iloc[0] != "[REDACTED]"
 
-# def test_mask_pii_boundary_missing_column():
-#     # 경계/예외 케이스: pii 열이 아예 없는 경우 에러 없이 통과해야 함
-#     df = pd.DataFrame({"tx_id": ["T1", "T2"], "amount": [100, 200]})
-#     result = mask_pii_data(df)
-#     assert "card_holder_pii" not in result.columns
-#     assert result["amount"].iloc[0] == 100
+def test_mask_pii_boundary_missing_column():
+    # 경계/예외 케이스: pii 열이 아예 없는 경우 에러 없이 통과해야 함
+    df = pd.DataFrame({"tx_id": ["T1", "T2"], "amount": [100, 200]})
+    result = mask_pii_data(df)
+    assert "card_holder_pii" not in result.columns
+    assert result["amount"].iloc[0] == 100
 
-# def test_mask_pii_exception_empty_df():
-#     # 예외 케이스: 빈 데이터프레임
-#     df = pd.DataFrame(columns=["tx_id", "card_holder_pii"])
-#     result = mask_pii_data(df)
-#     assert len(result) == 0
-#     assert "card_holder_pii" in result.columns
+def test_mask_pii_exception_empty_df():
+    # 예외 케이스: 빈 데이터프레임
+    df = pd.DataFrame(columns=["tx_id", "card_holder_pii"])
+    result = mask_pii_data(df)
+    assert len(result) == 0
+    assert "card_holder_pii" in result.columns
