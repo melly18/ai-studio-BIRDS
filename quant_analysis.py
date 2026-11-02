@@ -95,7 +95,7 @@ def detect_duplicate_tags(clean_df: pd.DataFrame, catalog: list) -> list[Duplica
 
     Args:
         clean_df: ``service_name`` 컬럼을 포함하는 정제된 결제 데이터프레임.
-        catalog: SaaS 카탈로그 딕셔너리 목록.
+        catalog: ``tools`` 키에 SaaS 카탈로그 목록을 담은 딕셔너리.
 
     Returns:
         ``[서비스명1, 서비스명2, 공통태그...]`` 형식의 중복 서비스 쌍 목록.
@@ -109,12 +109,13 @@ def detect_duplicate_tags(clean_df: pd.DataFrame, catalog: list) -> list[Duplica
     if not isinstance(clean_df, pd.DataFrame):
         raise TypeError("Input must be a pandas DataFrame")
 
-    if clean_df.empty or not catalog:
+    if clean_df.empty or not catalog or not catalog.get("tools"):
         return []
 
     if "service_name" not in clean_df.columns:
         raise KeyError("Missing required column: service_name")
 
+    catalog_tools = catalog["tools"]
     used_names = {
         value.strip().casefold()
         for value in clean_df["service_name"]
@@ -123,7 +124,7 @@ def detect_duplicate_tags(clean_df: pd.DataFrame, catalog: list) -> list[Duplica
 
     matched_catalog = []
     seen_service_names = set()
-    for item in catalog:
+    for item in catalog_tools:
         if not isinstance(item, dict):
             continue
 
