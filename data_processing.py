@@ -18,11 +18,6 @@ def _warning(tx_id: str, reason: str, action: str) -> dict:
     return {"tx_id": str(tx_id or ""), "reason": reason, "action": action}
 
 
-def parse_amount(value) -> int:
-    """문자열 금액을 정수로 변환한다."""
-    return int(str(value).replace(",", "").replace("원", "").replace("₩", "").strip())
-
-
 def parse_date(value) -> str:
     """날짜 문자열을 YYYY-MM-DD 형식으로 통일한다."""
     text = str(value).strip()
@@ -97,13 +92,17 @@ def clean_billing_csv(df: pd.DataFrame, catalog: dict) -> tuple[pd.DataFrame, li
         "monthly_cost_krw",
     ]
 
-    # 0. 빈 입력 처리
-    if df is None or len(df) == 0:
+    if df is None:
         return pd.DataFrame(columns=empty_columns), []
 
+    # FIXED: T07 재현을 위해 필수 열 검사를 빈 입력 처리보다 먼저 수행
     missing = [col for col in required_cols if col not in df.columns]
     if missing:
         raise ValueError(f"필수 열 누락: {missing[0]}")
+
+    # 0. 빈 입력 처리
+    if len(df) == 0:
+        return pd.DataFrame(columns=empty_columns), []
 
     work = df.copy()
     warnings: list[dict] = []

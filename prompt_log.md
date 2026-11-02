@@ -69,3 +69,16 @@ service_name(str);툴 이름, inactive_seats(int);유휴 좌석, wasted_spend(in
 
 - 수정 내역: 커밋 eb402c9
 - 테스트 결과 : pytest 3 passed
+
+## [data_processing] clean_billing_csv - 2026-11-02, 작성자: 박지우
+- 사용 도구: GitHub Copilot Chat
+- 프롬프트:
+"(원문 붙여넣기)"
+- 커밋 해시: 3855674, fb5a1f6, fa58b67
+- 결함 1) 빈 DataFrame이 필수 열 누락 상태로 들어오면 empty return가 먼저 실행되어 T07이 실패하는 문제
+- 결함 2) 잘못된 alias 표준화 경고가 등록 서비스명에도 발생하는 문제
+- 결함 3) auto tx_id 발급이 유효성 검증보다 먼저 실행되어 번호가 어긋나는 문제
+- 결함 4) 최종 결과열이 float 형으로 남아 int 변환이 누락되는 문제
+- A·B 수정: 필수 열 검사를 빈 입력 처리보다 앞에 두어 T07을 통과시키고, 사용하지 않는 parse_amount 정의를 제거함
+- C 유지: department 정규화는 팀 확인 대기 상태로 유지
+- 테스트 결과: pytest -v test_clean_billing_csv.py > pytest_result_clean_billing_csv.log 실행 결과, T01~T05와 T07 통과, T06 skip
