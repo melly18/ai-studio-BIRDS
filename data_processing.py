@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import json
 import re
 from datetime import datetime
+from typing import Any
 
 import pandas as pd
 
@@ -20,6 +22,53 @@ def load_billing_csv(file_path: str) -> pd.DataFrame:
         pd.errors.ParserError,
     ) as exc:
         raise ValueError("결제 내역 CSV를 읽을 수 없습니다.") from exc
+
+def load_saas_catalog(catalog_path: str) -> dict[str, Any]:
+    """공급사 카탈로그 JSON 파일을 읽어 필수 키를 검증하고 반환한다.
+
+    Args:
+        catalog_path: 읽을 공급사 카탈로그 JSON 파일 경로.
+
+    Returns:
+        필수 구조 검증을 통과한 카탈로그 내용.
+
+    Raises:
+        FileNotFoundError: 카탈로그 파일을 찾을 수 없는 경우.
+        ValueError: JSON 문법이 잘못되었거나 필수 구조를 만족하지 않는 경우.
+    """
+    with open(catalog_path, encoding="utf-8-sig") as catalog_file:
+        try:
+            catalog = json.load(catalog_file)
+        except json.JSONDecodeError as exc:
+            raise ValueError("카탈로그 JSON 문법이 올바르지 않습니다.") from exc
+
+    if not isinstance(catalog, dict):
+        raise ValueError("카탈로그 최상위 구조는 dict여야 합니다.")
+
+    for key in ("meta", "tools"):
+        if key not in catalog:
+            raise ValueError(f"필수 키 누락: {key}")
+
+    if not isinstance(catalog["meta"], dict):
+        raise ValueError("meta는 dict여야 합니다.")
+    if not isinstance(catalog["tools"], list):
+        raise ValueError("tools는 list여야 합니다.")
+
+    tool_required_keys = (
+        "tool_id",
+        "service_name",
+        "aliases",
+        "category_tags",
+        "pricing_tiers",
+    )
+    for index, tool in enumerate(catalog["tools"]):
+        if not isinstance(tool, dict):
+            raise ValueError(f"tools[{index}] 필수 키 누락: {tool_required_keys[0]}")
+        for key in tool_required_keys:
+            if key not in tool:
+                raise ValueError(f"tools[{index}] 필수 키 누락: {key}")
+
+    return catalog
 
 
 def mask_pii_data(df: pd.DataFrame) -> pd.DataFrame:
