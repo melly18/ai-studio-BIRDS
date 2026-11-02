@@ -5,6 +5,33 @@ from datetime import datetime
 
 import pandas as pd
 
+def load_billing_csv(file_path: str) -> pd.DataFrame:
+    """결제 내역 CSV 파일을 원본 문자열 DataFrame으로 불러온다.
+
+    Args:
+        file_path: 읽을 결제 내역 CSV 파일 경로.
+
+    Returns:
+        파일 헤더와 행을 그대로 담은 DataFrame.
+
+    Raises:
+        ValueError: 파일이 비어 있거나 CSV 디코딩 또는 파싱에 실패한 경우.
+        FileNotFoundError: 파일을 찾을 수 없는 경우.
+    """
+    try:
+        return pd.read_csv(
+            file_path,
+            encoding="utf-8-sig",
+            dtype=str,
+            keep_default_na=False,
+        )
+    except (
+        UnicodeDecodeError,
+        pd.errors.EmptyDataError,
+        pd.errors.ParserError,
+    ) as exc:
+        raise ValueError("결제 내역 CSV를 읽을 수 없습니다.") from exc
+
 
 def mask_pii_data(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty: # 코드 리딩 후 빈 데이터프레임 방어 로직
