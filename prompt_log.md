@@ -73,7 +73,31 @@ service_name(str);툴 이름, inactive_seats(int);유휴 좌석, wasted_spend(in
 ## [data_processing] clean_billing_csv - 2026-11-02, 작성자: 박지우
 - 사용 도구: GitHub Copilot Chat
 - 프롬프트:
-"(원문 붙여넣기)"
+```
+1. first.py = _original_clean.py야
+
+data_processing.py에는 팀원(강규민)의 mask_pii_data가 이미 있습니다.
+
+1. _original_clean.py의 함수들(... )를 data_processing.py의 mask_pii_data 아래에 그대로 추가하세요.
+2. 코드 내용은 한 글자도 고치지 마세요.
+3. git config user.name과 git branch --show-current를 보여주세요.
+4. data_processing.py만 다음 메시지로 커밋하세요. 'feat: add clean_billing_csv using Copilot'
+
+2. handoff.md 5절의 결함 4건을 clean_billing_csv에 반영하세요.
+
+- 다음 메시지로 커밋하세요. 제목: 'fix: clean_billing_csv amount parsing, alias warning, auto tx_id order, int types'
+
+3. handoff.md 3절의 T01~T07을 저장소 최상위 test_clean_billing_csv.py로 작성하세요.
+- T06은 세 샘플 파일 중 하나라도 없으면 pytest.skip
+
+4. 테스트 함수 이름은 무엇을 검증하는지 드러나게 지으세요.
+- 각 테스트 첫 줄에 docstring을 한 줄 적으세요.
+- 다음 메시지로 커밋하세요. 'test: add clean_billing_csv tests T01~T07 (normal/boundary/exception/integration)'
+
+5. prompt_log.md의 박지우 항목을 최종 정리하세요.
+- 실제 커밋 해시를 기록하고, 결함 1)~4), A·B 수정, C 유지, 테스트 결과를 적으세요.
+- 마지막에 줄바꿈을 한 번 추가하세요.
+```
 - 커밋 해시: 337b2fb, fa58b67, fb5a1f6, 3855674, 529a2a7
 - 결함 1) 8단계에서 이미 숫자로 바뀐 금액을 parse_amount로 다시 파싱해 행이 잘못 제외되고 KeyError(monthly_cost_krw)가 발생 → int(raw_amount)로 수정
 - 결함 2) 카탈로그에 등록된 서비스명에도 '미등록 서비스명 유지' 경고가 기록됨 → alias_map에 없을 때만 기록
