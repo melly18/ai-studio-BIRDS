@@ -1,3 +1,18 @@
+## 7주차 시그니처 변경 내용
+1. 신규 함수 추가: load_saas_catalog()
+- 추가 사유: 공급사 카탈로그 JSON 파일을 읽어 필수 키를 검증하고 dict로 반환하는 함수를 추가함.
+
+2. 시그니처 변경: clean_billing_csv()
+- 변경 전: (DataFrame) 
+- 변경 후: (DataFrame, catalog: dict)
+- 변경 사유: 카탈로그 딕셔너리를 입력 받아 service_name을 카탈로그 표준명으로 통일해야 함.
+
+3. 시그니처 변경: detect_duplicate_tags()
+- 변경 전: (DataFrame) 
+- 변경 후: (DataFrame, catalog: dict)
+- 변경 사유: 카탈로그 딕셔너리를 입력 받아 딕셔너리 내 category_tags로 중복 태그 산출해야 함.
+
+
 ## [data_processing] load_billing_csv() - 2026-11-02, 작성자: 차세연
 - 사용 도구: GitHub Copilot Chat
 - 프롬프트:
