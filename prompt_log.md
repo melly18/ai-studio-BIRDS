@@ -74,11 +74,10 @@ service_name(str);툴 이름, inactive_seats(int);유휴 좌석, wasted_spend(in
 - 사용 도구: GitHub Copilot Chat
 - 프롬프트:
 ```
-1. first.py = _original_clean.py야
 
-data_processing.py에는 팀원(강규민)의 mask_pii_data가 이미 있습니다.
+data_processing.py에는 팀원의 mask_pii_data가 이미 있습니다.
 
-1. _original_clean.py의 함수들(... )를 data_processing.py의 mask_pii_data 아래에 그대로 추가하세요.
+1. first.py의 함수들(... )를 data_processing.py의 mask_pii_data 아래에 그대로 추가하세요.
 2. 코드 내용은 한 글자도 고치지 마세요.
 3. git config user.name과 git branch --show-current를 보여주세요.
 4. data_processing.py만 다음 메시지로 커밋하세요. 'feat: add clean_billing_csv using Copilot'
