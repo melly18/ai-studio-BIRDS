@@ -69,3 +69,35 @@ service_name(str);툴 이름, inactive_seats(int);유휴 좌석, wasted_spend(in
 
 - 수정 내역: 커밋 eb402c9
 - 테스트 결과 : pytest 3 passed
+
+
+## [데이터 전처리] mask_pii_data - 2026-11-02, 작성자: 강규민
+- 사용 도구: GitHub Copilot Chat
+- 프롬프트:
+당신은 파이썬 백엔드 개발을 돕는 어시스턴트입니다.
+SaaS 결제 내역 분석 시스템의 전처리 모듈에 들어갈 함수를 구현해 주세요.
+
+[함수 시그니처 - 변경 금지]
+def mask_pii_data(df: pd.DataFrame) -> pd.DataFrame:
+
+[입력 명세]
+df: 원본 결제 내역 pandas DataFrame. 'card_holder_pii' 열이 포함될 수 있음.
+
+[출력 명세]
+원본 데이터를 훼손하지 않도록 복사본을 만들고, 'card_holder_pii' 열의 모든 값을 "[REDACTED]" 문자열로 일괄 치환한 DataFrame 반환.
+
+[예외·경계 방침]
+- 입력 DataFrame에 'card_holder_pii' 열이 없는 경우: 에러를 발생시키지 않고 원본(복사본) 그대로 반환
+- 입력 DataFrame이 비어있는(행이 0개) 경우: 빈 DataFrame 반환
+
+[제약 조건]
+- pandas 라이브러리만 사용
+- 타입 힌트와 docstring 필수
+- 원본 DataFrame을 직접 수정하지 말고 반드시 .copy()를 사용할 것
+
+- 생성 코드 위치: 커밋 d884114
+- 코드 리딩에서 발견한 결함: 
+    1) Copilot이 df.copy()를 사용해 원본 훼손을 방지하고 열 존재 여부(if "card_holder_pii" in masked_df.columns)를 확인하는 등 제약 조건을 훌륭히 준수함.
+    2) 하지만 빈 데이터프레임이 들어왔을 때 아래 로직을 불필요하게 타지 않도록 `if df.empty: return df.copy()` 방어 코드를 최상단에 명시적으로 추가하여 안전성을 높이기로 판단함.
+- 수정 내역: 커밋 67f656d - 빈 데이터프레임 조기 반환(Early Return) 예외 처리 명시적 추가.
+- 테스트 결과: pytest 3 passed
