@@ -91,3 +91,155 @@ def test_calculate_leakage_excess_users():   #예외 케이스 테스트: 유휴
 
     with pytest.raises(ValueError):
         calculate_seat_leakage(clean_df)
+
+"""
+calculate_seat_leakage 함수에 대한 단위 테스트를 수행한다.
+정상 2건, 경계 1건, 예외 2건을 테스트한다.
+"""
+from quant_analysis import detect_duplicate_tags
+
+
+def test_detect_duplicate_tags_case_1():
+    clean_df = pd.DataFrame(
+        [
+            {"service_name": "Notion"},
+            {"service_name": "Jira"},
+            {"service_name": "ClickUp"},
+        ]
+    )
+    catalog = {
+        "tools": [
+            {
+                "tool_id": "notion",
+                "service_name": "Notion",
+                "aliases": ["노션", "notion", "NOTION"],
+                "category_tags": [
+                    "documentation",
+                    "project_management",
+                    "knowledge_management",
+                ],
+            },
+            {
+                "tool_id": "jira",
+                "service_name": "Jira",
+                "aliases": ["지라", "jira", "JIRA"],
+                "category_tags": [
+                    "project_management",
+                    "task_tracking",
+                    "development",
+                ],
+            },
+            {
+                "tool_id": "clickup",
+                "service_name": "ClickUp",
+                "aliases": ["클릭업", "clickup", "CLICKUP"],
+                "category_tags": ["project_management", "documentation"],
+            },
+        ]
+    }
+
+    assert detect_duplicate_tags(clean_df, catalog) == [
+        ["Notion", "Jira", "project_management"],
+        ["Notion", "ClickUp", "documentation", "project_management"],
+        ["Jira", "ClickUp", "project_management"],
+    ]
+
+
+def test_detect_duplicate_tags_case_2():
+    clean_df = pd.DataFrame(
+        [{"service_name": "Figma"}, {"service_name": "Jira"}]
+    )
+    catalog = {
+        "tools": [
+            {
+                "tool_id": "figma",
+                "service_name": "Figma",
+                "aliases": ["피그마", "figma", "FIGMA"],
+                "category_tags": ["design", "prototyping", "whiteboarding"],
+            },
+            {
+                "tool_id": "jira",
+                "service_name": "Jira",
+                "aliases": ["지라", "jira", "JIRA"],
+                "category_tags": [
+                    "project_management",
+                    "task_tracking",
+                    "development",
+                ],
+            },
+        ]
+    }
+
+    assert detect_duplicate_tags(clean_df, catalog) == []
+
+
+def test_detect_duplicate_tags_case_3():
+    clean_df = pd.DataFrame(
+        [
+            {"service_name": "Figma"},
+            {"service_name": "Jira"},
+            {"service_name": "ClickUp"},
+        ]
+    )
+    catalog = {
+        "tools": [
+            {
+                "tool_id": "figma",
+                "service_name": "Figma",
+                "aliases": ["피그마", "figma", "FIGMA"],
+                "category_tags": ["design", "prototyping", "whiteboarding"],
+            },
+            {
+                "tool_id": "jira",
+                "service_name": "Jira",
+                "aliases": ["지라", "jira", "JIRA"],
+                "category_tags": [
+                    "project_management",
+                    "task_tracking",
+                    "development",
+                ],
+            },
+            {
+                "tool_id": "clickup",
+                "service_name": "ClickUp",
+                "aliases": ["클릭업", "clickup", "CLICKUP"],
+                "category_tags": [
+                    "project_management",
+                    "task_tracking",
+                    "documentation",
+                ],
+            },
+        ]
+    }
+
+    assert detect_duplicate_tags(clean_df, catalog) == [
+        ["Jira", "ClickUp", "project_management", "task_tracking"]
+    ]
+
+
+def test_detect_duplicate_tags_case_4():
+    clean_df = pd.DataFrame()
+    catalog = {
+        "tools": [
+            {
+                "tool_id": "figma",
+                "service_name": "Figma",
+                "aliases": ["피그마", "figma", "FIGMA"],
+                "category_tags": ["design", "prototyping", "whiteboarding"],
+            }
+        ]
+    }
+
+    assert detect_duplicate_tags(clean_df, catalog) == []
+
+
+def test_detect_duplicate_tags_case_5():
+    clean_df = pd.DataFrame(
+        [
+            {"service_name": "Notion"},
+            {"service_name": "Jira"},
+            {"service_name": "ClickUp"},
+        ]
+    )
+
+    assert detect_duplicate_tags(clean_df, {"tools": []}) == []
