@@ -86,7 +86,7 @@ service_name(str);툴 이름, inactive_seats(int);유휴 좌석, wasted_spend(in
 - 테스트 결과 : pytest 3 passed
 
 
-## [데이터 전처리] clean_billing_csv - 2026-11-02, 작성자: 박지우
+## [data_processing] clean_billing_csv - 2026-11-02, 작성자: 박지우
 
 ### 사용도구
 Copilot
@@ -147,9 +147,10 @@ def clean_billing_csv(df: pd.DataFrame, catalog: dict) -> tuple[pd.DataFrame, li
 
 
 
-## [데이터 전처리] mask_pii_data - 2026-11-02, 작성자: 강규민
+## [data_processing] mask_pii_data - 2026-11-02, 작성자: 강규민
 - 사용 도구: GitHub Copilot Chat
 - 프롬프트:
+```
 당신은 파이썬 백엔드 개발을 돕는 어시스턴트입니다.
 SaaS 결제 내역 분석 시스템의 전처리 모듈에 들어갈 함수를 구현해 주세요.
 
@@ -170,7 +171,7 @@ df: 원본 결제 내역 pandas DataFrame. 'card_holder_pii' 열이 포함될 �
 - pandas 라이브러리만 사용
 - 타입 힌트와 docstring 필수
 - 원본 DataFrame을 직접 수정하지 말고 반드시 .copy()를 사용할 것
-
+```
 - 생성 코드 위치: 커밋 d884114
 - 코드 리딩에서 발견한 결함: 
     1) Copilot이 df.copy()를 사용해 원본 훼손을 방지하고 열 존재 여부(if "card_holder_pii" in masked_df.columns)를 확인하는 등 제약 조건을 훌륭히 준수함.
