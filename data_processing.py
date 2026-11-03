@@ -172,7 +172,7 @@ def clean_billing_csv(df: pd.DataFrame, catalog: dict) -> tuple[pd.DataFrame, li
         original_tx = "" if pd.isna(row["tx_id"]) else str(row["tx_id"]).strip()
         if original_tx and original_tx in seen_tx_ids:
             warnings.append(_warning(original_tx, "중복 tx_id로 제외", "제외"))
-            work.drop(idx, inplace=True)
+            work = work.drop(idx)
             continue
         if original_tx:
             seen_tx_ids.add(original_tx)
@@ -186,7 +186,7 @@ def clean_billing_csv(df: pd.DataFrame, catalog: dict) -> tuple[pd.DataFrame, li
             work.at[idx, "billing_date"] = parse_date(raw_date)
         except ValueError:
             warnings.append(_warning(work.at[idx, "tx_id"], f"잘못된 billing_date: {raw_date}", "제외"))
-            work.drop(idx, inplace=True)
+            work = work.drop(idx)
 
     # 3. service_name
     for idx, row in work.iterrows():
@@ -283,7 +283,7 @@ def clean_billing_csv(df: pd.DataFrame, catalog: dict) -> tuple[pd.DataFrame, li
     for idx, row in work.iterrows():
         cycle = row["billing_cycle"]
         total = int(row["billing_amount_krw"])
-        work.at[idx, "monthly_cost_krw"] = to_monthly(total, cycle)
+        work.loc[idx, "monthly_cost_krw"] = to_monthly(total, cycle)
 
     # FIXED: 남은 행 중 빈 tx_id만 TX-AUTO-001부터 발급
     empty_tx = work["tx_id"].eq("")
