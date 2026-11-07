@@ -75,6 +75,35 @@ def test_billing_zero_byte_file_raises_value_error(tmp_path):
 
 
 # load_saas_catalog
+@pytest.mark.parametrize(
+    "content, expected",
+    [
+        ("[]", "dict"),                                    # 최상위가 list
+        ('{"tools": []}', "meta"),                         # meta 누락
+        ('{"meta": {}}', "tools"),                         # tools 누락
+        ('{"meta": [], "tools": []}', "meta"),             # meta 타입 오류
+        ('{"meta": {}, "tools": {}}', "tools"),            # tools 타입 오류
+        ('{"meta": {}, "tools": ["x"]}', r"tools\[0\]"),   # tool이 dict 아님
+    ],
+)
+
+def test_catalog_invalid_structure_raises(tmp_path, content, expected):
+    """예외: 최상위·meta·tools·tool 구조 오류는 ValueError."""
+    path = tmp_path / "invalid.json"
+    path.write_text(content, encoding="utf-8")
+
+    with pytest.raises(ValueError, match=expected):
+        load_saas_catalog(str(path))
+
+def test_catalog_utf8_bom_allowed(tmp_path):
+    """경계: BOM이 붙은 UTF-8 파일도 정상 로드된다."""
+    import json
+
+    path = tmp_path / "bom.json"
+    path.write_text(json.dumps({"meta": {}, "tools": []}), encoding="utf-8-sig")
+
+    assert load_saas_catalog(str(path)) == {"meta": {}, "tools": []}
+    
 def test_catalog_normal_sample():
     """정상: 실제 샘플 카탈로그 30개 도구가 원본 그대로 로드된다."""
     import json
