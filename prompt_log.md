@@ -1,11 +1,16 @@
-## 7주차 시그니처 변경 내용
+## 7주차 시그니처 변경 내용 (*11월 7일 수정내용 업데이트)
 1. 신규 함수 추가: load_saas_catalog()
 - 추가 사유: 공급사 카탈로그 JSON 파일을 읽어 필수 키를 검증하고 dict로 반환하는 함수를 추가함.
 
 2. 시그니처 변경: clean_billing_csv()
-- 변경 전: (DataFrame) 
-- 변경 후: (DataFrame, catalog: dict)
+- 변경 전 입력: (DataFrame) 
+- 변경 후 입력: (DataFrame, catalog: dict)
 - 변경 사유: 카탈로그 딕셔너리를 입력 받아 service_name을 카탈로그 표준명으로 통일해야 함.
+
+- *11월 7일 작성됨
+- 변경 전 출력: (DataFrame)
+- 변경 후 출력: tuple[DataFrame, list[dict]]
+- 변경 사유: 정제 과정에서 제외·보정된 내역(warnings)을 clean_df와 함께 반환해야 데이터 추적과 검증이 가능함.
 
 3. 시그니처 변경: detect_duplicate_tags()
 - 변경 전: (DataFrame) 
