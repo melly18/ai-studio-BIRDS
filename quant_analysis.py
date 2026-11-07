@@ -76,7 +76,6 @@ def calculate_seat_leakage(clean_df: pd.DataFrame) -> list[SeatLeakage]:
             ["inactive_seats", "wasted_spend"]
         ]
         .sum()
-        .rename_axis("service_name")
         .reset_index()
     )
 
