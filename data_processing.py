@@ -91,6 +91,29 @@ def load_saas_catalog(catalog_path: str) -> dict[str, Any]:
 # 모듈 상단 상수 정의 (매직 스트링 상수화 리팩터링)
 PII_TARGET_COLUMN: str = "card_holder_pii"
 PII_MASK_TOKEN: str = "[REDACTED]"
+REQUIRED_COLUMNS: tuple[str, ...] = (
+    "tx_id",
+    "billing_date",
+    "service_name",
+    "department",
+    "billing_cycle",
+    "seat_count",
+    "active_users",
+    "billing_amount_krw",
+    "card_holder_pii",
+)
+EMPTY_COLUMNS: tuple[str, ...] = (
+    "tx_id",
+    "billing_date",
+    "service_name",
+    "department",
+    "billing_cycle",
+    "seat_count",
+    "active_users",
+    "billing_amount_krw",
+    "card_holder_pii",
+    "monthly_cost_krw",
+)
 
 
 def mask_pii_data(df: pd.DataFrame) -> pd.DataFrame:
@@ -119,13 +142,25 @@ def mask_pii_data(df: pd.DataFrame) -> pd.DataFrame:
     return masked_df
 
 
+def _coerce_text(value: object) -> str:
+    """결측값을 빈 문자열로 바꾸고, 공백을 정리한 문자열을 반환한다."""
+    if pd.isna(value):
+        return ""
+    return str(value).strip()
+
+
 def _warning(tx_id: str, reason: str, action: str) -> dict:
+    """경고 엔트리를 생성한다."""
     return {"tx_id": str(tx_id or ""), "reason": reason, "action": action}
 
 
-def parse_date(value) -> str:
-    """날짜 문자열을 YYYY-MM-DD 형식으로 통일한다."""
-    text = str(value).strip()
+def parse_date(value: object) -> str:
+    """날짜 문자열을 YYYY-MM-DD 형식으로 통일한다.
+
+    다양한 입력 형식(예: YYYY-MM-DD, YYYY/MM/DD, YYYYMMDD, 한글 날짜)을
+    표준 ISO 형식으로 변환한다. 변환이 불가능하면 ValueError를 발생시킨다.
+    """
+    text = _coerce_text(value)
     patterns = [
         (r"^\d{4}-\d{1,2}-\d{1,2}$", "%Y-%m-%d"),
         (r"^\d{4}/\d{1,2}/\d{1,2}$", "%Y/%m/%d"),
@@ -139,9 +174,12 @@ def parse_date(value) -> str:
     raise ValueError("invalid date")
 
 
-def normalize_cycle(value) -> str:
-    """billing_cycle 값을 표준 월간/연간 값으로 변환한다."""
-    text = str(value).strip().casefold()
+def normalize_cycle(value: object) -> str:
+    """billing_cycle 값을 표준 월간/연간 값으로 변환한다.
+
+    유효하지 않은 값은 ValueError를 발생시켜 상위 단계에서 제외 처리한다.
+    """
+    text = _coerce_text(value).casefold()
     if text in {"월간", "monthly", "month"}:
         return "월간"
     if text in {"연간", "annual", "yearly"}:
@@ -150,8 +188,12 @@ def normalize_cycle(value) -> str:
 
 
 def build_alias_map(catalog: dict | None) -> dict[str, str]:
-    """catalog의 alias를 표준 service_name 맵으로 만든다."""
-    mapping = {}
+    """카탈로그 alias를 표준 service_name 매핑으로 변환한다.
+
+    각 도구의 service_name과 aliases를 lowercase 기준으로 조회 키로 만들고,
+    표준 이름을 값으로 저장한다. 카탈로그가 없거나 잘못된 구조면 빈 맵을 반환한다.
+    """
+    mapping: dict[str, str] = {}
     if not isinstance(catalog, dict):
         return mapping
     for tool in catalog.get("tools", []):
@@ -166,58 +208,56 @@ def build_alias_map(catalog: dict | None) -> dict[str, str]:
 
 
 def to_monthly(value: int, cycle: str) -> int:
-    """월별 비용으로 환산한다."""
+    """월간 단위 비용으로 환산한다.
+
+    월간 결제는 그대로 유지하고, 연간 결제는 12개월 기준으로 반올림하여
+    월별 비용으로 변환한다.
+    """
     if cycle == "월간":
         return value
     return int((value / 12) + 0.5)
 
 
-def clean_billing_csv(df: pd.DataFrame, catalog: dict) -> tuple[pd.DataFrame, list[dict]]:
-    required_cols = [
-        "tx_id",
-        "billing_date",
-        "service_name",
-        "department",
-        "billing_cycle",
-        "seat_count",
-        "active_users",
-        "billing_amount_krw",
-        "card_holder_pii",
-    ]
-    empty_columns = [
-        "tx_id",
-        "billing_date",
-        "service_name",
-        "department",
-        "billing_cycle",
-        "seat_count",
-        "active_users",
-        "billing_amount_krw",
-        "card_holder_pii",
-        "monthly_cost_krw",
-    ]
+def clean_billing_csv(df: pd.DataFrame, catalog: dict[str, Any]) -> tuple[pd.DataFrame, list[dict]]:
+    """결제 내역 CSV를 정제하여 표준 스키마와 경고 목록을 반환한다.
 
+    정제 단계 요약:
+        1. 필수 열 검증 및 빈 입력 처리
+        2. tx_id 중복 제거 및 자동 발급
+        3. billing_date, service_name, department, billing_cycle 정규화
+        4. seat_count, active_users, billing_amount_krw 검증 및 보정
+        5. monthly_cost_krw 계산과 최종 컬럼 재배치
+
+    Args:
+        df (pd.DataFrame): 원본 결제 내역 DataFrame. 각 컬럼 값은 문자열로 들어온다.
+        catalog (dict[str, Any]): 서비스 이름 alias 정보를 담은 공급사 카탈로그 딕셔너리.
+
+    Returns:
+        tuple[pd.DataFrame, list[dict]]: 정제된 결제 내역 DataFrame과 경고 목록의 튜플.
+
+    Raises:
+        ValueError: 필수 컬럼이 누락된 경우 발생한다.
+    """
     if df is None:
-        return pd.DataFrame(columns=empty_columns), []
+        return pd.DataFrame(columns=list(EMPTY_COLUMNS)), []
 
     # FIXED: T07 재현을 위해 필수 열 검사를 빈 입력 처리보다 먼저 수행
-    missing = [col for col in required_cols if col not in df.columns]
+    missing = [col for col in REQUIRED_COLUMNS if col not in df.columns]
     if missing:
         raise ValueError(f"필수 열 누락: {missing[0]}")
 
     # 0. 빈 입력 처리
     if len(df) == 0:
-        return pd.DataFrame(columns=empty_columns), []
+        return pd.DataFrame(columns=list(EMPTY_COLUMNS)), []
 
     work = df.copy()
     warnings: list[dict] = []
     seen_tx_ids: set[str] = set()
-    auto_index = 1
     alias_map = build_alias_map(catalog)
 
     # 1. tx_id
     for idx, row in work.iterrows():
-        original_tx = "" if pd.isna(row["tx_id"]) else str(row["tx_id"]).strip()
+        original_tx = _coerce_text(row["tx_id"])
         if original_tx and original_tx in seen_tx_ids:
             warnings.append(_warning(original_tx, "중복 tx_id로 제외", "제외"))
             work = work.drop(idx)
@@ -229,7 +269,7 @@ def clean_billing_csv(df: pd.DataFrame, catalog: dict) -> tuple[pd.DataFrame, li
 
     # 2. billing_date
     for idx, row in work.iterrows():
-        raw_date = "" if pd.isna(row["billing_date"]) else str(row["billing_date"]).strip()
+        raw_date = _coerce_text(row["billing_date"])
         try:
             work.at[idx, "billing_date"] = parse_date(raw_date)
         except ValueError:
@@ -238,7 +278,7 @@ def clean_billing_csv(df: pd.DataFrame, catalog: dict) -> tuple[pd.DataFrame, li
 
     # 3. service_name
     for idx, row in work.iterrows():
-        raw_service = "" if pd.isna(row["service_name"]) else str(row["service_name"]).strip()
+        raw_service = _coerce_text(row["service_name"])
         if raw_service == "":
             warnings.append(_warning(work.at[idx, "tx_id"], "service_name 비어 있어 제외", "제외"))
             work.drop(idx, inplace=True)
@@ -254,7 +294,7 @@ def clean_billing_csv(df: pd.DataFrame, catalog: dict) -> tuple[pd.DataFrame, li
 
     # 4. department
     for idx, row in work.iterrows():
-        raw_department = "" if pd.isna(row["department"]) else str(row["department"]).strip()
+        raw_department = _coerce_text(row["department"])
         if raw_department == "":
             warnings.append(_warning(work.at[idx, "tx_id"], "department 비어 있어 '미상'으로 보정", "보정"))
             work.at[idx, "department"] = "미상"
@@ -263,7 +303,7 @@ def clean_billing_csv(df: pd.DataFrame, catalog: dict) -> tuple[pd.DataFrame, li
 
     # 5. billing_cycle
     for idx, row in work.iterrows():
-        raw_cycle = "" if pd.isna(row["billing_cycle"]) else str(row["billing_cycle"]).strip()
+        raw_cycle = _coerce_text(row["billing_cycle"])
         try:
             work.at[idx, "billing_cycle"] = normalize_cycle(raw_cycle)
         except ValueError:
@@ -289,7 +329,7 @@ def clean_billing_csv(df: pd.DataFrame, catalog: dict) -> tuple[pd.DataFrame, li
     work["active_users"] = pd.to_numeric(work["active_users"], errors="coerce")
     for idx, row in work.iterrows():
         raw_active = row["active_users"]
-        if pd.isna(raw_active) or str(raw_active).strip() == "":
+        if pd.isna(raw_active) or _coerce_text(raw_active) == "":
             work.at[idx, "active_users"] = 0
             warnings.append(_warning(work.at[idx, "tx_id"], "active_users 비어 있어 0으로 보정", "보정"))
             continue
@@ -310,7 +350,7 @@ def clean_billing_csv(df: pd.DataFrame, catalog: dict) -> tuple[pd.DataFrame, li
     work["billing_amount_krw"] = pd.to_numeric(work["billing_amount_krw"], errors="coerce")
     for idx, row in work.iterrows():
         raw_amount = row["billing_amount_krw"]
-        if pd.isna(raw_amount) or str(raw_amount).strip() == "":
+        if pd.isna(raw_amount) or _coerce_text(raw_amount) == "":
             warnings.append(_warning(work.at[idx, "tx_id"], "billing_amount_krw 비어 있어 제외", "제외"))
             work.drop(idx, inplace=True)
             continue
