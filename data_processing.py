@@ -63,8 +63,6 @@ def load_saas_catalog(catalog_path: str) -> dict[str, Any]:
     try:
         with open(catalog_path, encoding=CATALOG_ENCODING) as catalog_file:
             catalog = json.load(catalog_file)
-    except FileNotFoundError:
-        raise
     except (json.JSONDecodeError, UnicodeDecodeError) as exc:
         raise ValueError("카탈로그 JSON을 읽을 수 없습니다.") from exc
     
@@ -82,7 +80,7 @@ def load_saas_catalog(catalog_path: str) -> dict[str, Any]:
 
     for index, tool in enumerate(catalog["tools"]):
         if not isinstance(tool, dict):
-            raise ValueError(f"tools[{index}] 필수 키 누락: {TOOL_REQUIRED_KEYS[0]}")
+            raise ValueError(f"tools[{index}]는 dict여야 합니다.")
         for key in TOOL_REQUIRED_KEYS:
             if key not in tool:
                 raise ValueError(f"tools[{index}] 필수 키 누락: {key}")
