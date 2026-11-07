@@ -8,6 +8,15 @@ from typing import Any
 import pandas as pd
 
 CSV_ENCODING = "utf-8-sig"  # Excel 저장 CSV의 BOM 대응
+CATALOG_ENCODING = "utf-8-sig"  # 공급사 카탈로그 JSON의 BOM 대응
+CATALOG_REQUIRED_KEYS = ("meta", "tools")  # 공급사 카탈로그 최상위 필수 키
+TOOL_REQUIRED_KEYS = (  # 공급사 카탈로그 도구별 필수 키
+    "tool_id",
+    "service_name",
+    "aliases",
+    "category_tags",
+    "pricing_tiers",
+)
 
 def load_billing_csv(file_path: str) -> pd.DataFrame:
     """결제 내역 CSV 파일을 원본 문자열 DataFrame으로 불러온다.
@@ -52,7 +61,7 @@ def load_saas_catalog(catalog_path: str) -> dict[str, Any]:
             필수 키 또는 도구 정보가 누락되거나 잘못된 형식인 경우 발생.
     """
     try:
-        with open(catalog_path, encoding="utf-8-sig") as catalog_file:
+        with open(catalog_path, encoding=CATALOG_ENCODING) as catalog_file:
             catalog = json.load(catalog_file)
     except FileNotFoundError:
         raise
@@ -62,7 +71,7 @@ def load_saas_catalog(catalog_path: str) -> dict[str, Any]:
     if not isinstance(catalog, dict):
         raise ValueError("카탈로그 최상위 구조는 dict여야 합니다.")
 
-    for key in ("meta", "tools"):
+    for key in CATALOG_REQUIRED_KEYS:
         if key not in catalog:
             raise ValueError(f"필수 키 누락: {key}")
 
@@ -71,17 +80,10 @@ def load_saas_catalog(catalog_path: str) -> dict[str, Any]:
     if not isinstance(catalog["tools"], list):
         raise ValueError("tools는 list여야 합니다.")
 
-    tool_required_keys = (
-        "tool_id",
-        "service_name",
-        "aliases",
-        "category_tags",
-        "pricing_tiers",
-    )
     for index, tool in enumerate(catalog["tools"]):
         if not isinstance(tool, dict):
-            raise ValueError(f"tools[{index}] 필수 키 누락: {tool_required_keys[0]}")
-        for key in tool_required_keys:
+            raise ValueError(f"tools[{index}] 필수 키 누락: {TOOL_REQUIRED_KEYS[0]}")
+        for key in TOOL_REQUIRED_KEYS:
             if key not in tool:
                 raise ValueError(f"tools[{index}] 필수 키 누락: {key}")
 

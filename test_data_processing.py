@@ -86,7 +86,6 @@ def test_billing_zero_byte_file_raises_value_error(tmp_path):
         ('{"meta": {}, "tools": ["x"]}', r"tools\[0\]"),   # tool이 dict 아님
     ],
 )
-
 def test_catalog_invalid_structure_raises(tmp_path, content, expected):
     """예외: 최상위·meta·tools·tool 구조 오류는 ValueError."""
     path = tmp_path / "invalid.json"
