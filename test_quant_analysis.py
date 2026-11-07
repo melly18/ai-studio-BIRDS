@@ -139,9 +139,9 @@ def test_detect_duplicate_tags_case_1():
     }
 
     assert detect_duplicate_tags(clean_df, catalog) == [
-        ["Notion", "Jira", "project_management"],
-        ["Notion", "ClickUp", "documentation", "project_management"],
-        ["Jira", "ClickUp", "project_management"],
+        {"tools": {"Notion", "Jira"}, "common_tags": {"project_management"}},
+        {"tools": {"Notion", "ClickUp"}, "common_tags": {"documentation", "project_management"}},
+        {"tools": {"Jira", "ClickUp"}, "common_tags": {"project_management"}},
     ]
 
 
@@ -213,7 +213,7 @@ def test_detect_duplicate_tags_case_3():
     }
 
     assert detect_duplicate_tags(clean_df, catalog) == [
-        ["Jira", "ClickUp", "project_management", "task_tracking"]
+        {"tools": {"Jira", "ClickUp"}, "common_tags": {"project_management", "task_tracking"}}
     ]
 
 

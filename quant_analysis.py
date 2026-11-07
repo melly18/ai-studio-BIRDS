@@ -162,11 +162,11 @@ def detect_duplicate_tags(clean_df: pd.DataFrame, catalog: dict) -> list[Duplica
     for index, (first_name, first_tags) in enumerate(matched_catalog):
         for second_name, second_tags in matched_catalog[index + 1:]:
             second_tag_set = set(second_tags)
-            common_tags = [
+            common_tags = {
                 tag for tag in first_tags
                 if tag in second_tag_set
-            ]
+            }
             if common_tags:
-                duplicate_pairs.append([first_name, second_name, *common_tags])
+                duplicate_pairs.append({"tools": {first_name, second_name}, "common_tags": common_tags})
 
     return duplicate_pairs
