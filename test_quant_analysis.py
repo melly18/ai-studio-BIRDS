@@ -50,8 +50,8 @@ def test_calculate_leakage_normal():   #정상 케이스 테스트
     result = calculate_seat_leakage(clean_df)
 
     assert len(result) == 2
-    assert result[0] == SeatLeakage("Figma", 8, 120000)
-    assert result[1] == SeatLeakage("Jira", 5, 50000)
+    assert result[0] == SeatLeakage(service_name="Figma", inactive_seats=8, wasted_spend=120000)
+    assert result[1] == SeatLeakage(service_name="Jira", inactive_seats=5, wasted_spend=50000)
 
 def test_calculate_leakage_zero_seats():  #경계 케이스 테스트: 유휴 좌석이 0인 경우
     clean_df = pd.DataFrame([
@@ -71,7 +71,7 @@ def test_calculate_leakage_zero_seats():  #경계 케이스 테스트: 유휴 �
 
     result = calculate_seat_leakage(clean_df)
 
-    assert result == [SeatLeakage("Figma", 0, 0)]
+    assert result == [SeatLeakage(service_name="Figma", inactive_seats=0, wasted_spend=0)]
 
 def test_calculate_leakage_excess_users():   #예외 케이스 테스트: 유휴 좌석이 음수인 경우
     clean_df = pd.DataFrame([

@@ -1,10 +1,9 @@
-from dataclasses import dataclass
+from typing import TypedDict
 
 import pandas as pd
 
 
-@dataclass(frozen=True)
-class SeatLeakage:
+class SeatLeakage(TypedDict):
     """서비스의 유휴 좌석 수와 추정 월간 낭비 금액."""
 
     service_name: str  #툴 이름
@@ -25,7 +24,7 @@ def calculate_seat_leakage(clean_df: pd.DataFrame) -> list[SeatLeakage]:
         clean_df: 필수 컬럼을 포함하는 정제된 결제 기록 데이터프레임.
 
     Returns:
-        ``clean_df``에 서비스가 처음 나타나는 순서의 ``SeatLeakage`` 목록.
+        ``clean_df``에 서비스가 처음 나타나는 순서의 ``SeatLeakage`` 리스트.
 
     Raises:
         TypeError: 입력이 pandas DataFrame이 아닌 경우.
@@ -61,18 +60,18 @@ def calculate_seat_leakage(clean_df: pd.DataFrame) -> list[SeatLeakage]:
     if (clean_df["active_users"] > clean_df["seat_count"]).any():   #active_users가 seat_count보다 큰 경우 에러 발생(유휴 좌석 음수)
         raise ValueError("active_users cannot exceed seat_count")
 
-    records = clean_df.assign(   #유휴 좌석 컬럼 생성
+    calculated_df = clean_df.assign(   #유휴 좌석 컬럼 생성
         inactive_seats=clean_df["seat_count"] - clean_df["active_users"]
     )
-    records = records.assign(   #낭비 금액 컬럼 생성(좌석당 단가 * 유휴 좌석 수)
+    calculated_df = calculated_df.assign(   #낭비 금액 컬럼 생성(좌석당 단가 * 유휴 좌석 수)
         wasted_spend=(
-            records["monthly_cost_krw"]
-            * records["inactive_seats"]
-            / records["seat_count"]
+            calculated_df["monthly_cost_krw"]
+            * calculated_df["inactive_seats"]
+            / calculated_df["seat_count"]
         ).round().astype(int)
     )
 
-    aggregated = records.groupby("service_name", sort=False)[   #툴 별로 합산
+    leakage_report = calculated_df.groupby("service_name", sort=False)[   #툴 별로 합산
         ["inactive_seats", "wasted_spend"]
     ].sum()
 
@@ -82,7 +81,7 @@ def calculate_seat_leakage(clean_df: pd.DataFrame) -> list[SeatLeakage]:
             inactive_seats=int(values["inactive_seats"]),
             wasted_spend=int(values["wasted_spend"]),
         )
-        for service_name, values in aggregated.iterrows()
+        for service_name, values in leakage_report.iterrows()
     ]
 
 
