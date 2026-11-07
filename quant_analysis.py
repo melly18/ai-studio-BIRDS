@@ -71,18 +71,16 @@ def calculate_seat_leakage(clean_df: pd.DataFrame) -> list[SeatLeakage]:
         ).round().astype(int)
     )
 
-    leakage_report = calculated_df.groupby("service_name", sort=False)[   #툴 별로 합산
-        ["inactive_seats", "wasted_spend"]
-    ].sum()
+    leakage_report = (
+        calculated_df.groupby("service_name", sort=False)[
+            ["inactive_seats", "wasted_spend"]
+        ]
+        .sum()
+        .rename_axis("service_name")
+        .reset_index()
+    )
 
-    return [    #list[SeatLeakage] 형태로 반환
-        SeatLeakage(
-            service_name=service_name,
-            inactive_seats=int(values["inactive_seats"]),
-            wasted_spend=int(values["wasted_spend"]),
-        )
-        for service_name, values in leakage_report.iterrows()
-    ]
+    return leakage_report.to_dict("records")
 
 
 def detect_duplicate_tags(clean_df: pd.DataFrame, catalog: dict) -> list[DuplicatePair]:
