@@ -60,14 +60,34 @@ def load_saas_catalog(catalog_path: str) -> dict[str, Any]:
     return catalog
 
 
+# 모듈 상단 상수 정의 (매직 스트링 상수화 리팩터링)
+PII_TARGET_COLUMN: str = "card_holder_pii"
+PII_MASK_TOKEN: str = "[REDACTED]"
+
+
 def mask_pii_data(df: pd.DataFrame) -> pd.DataFrame:
-    if df.empty: # 코드 리딩 후 빈 데이터프레임 방어 로직
+    """결제 내역 DataFrame의 개인정보(card_holder_pii) 컬럼을 마스킹한 복사본을 반환한다.
+
+    Args:
+        df (pd.DataFrame): 정제 전후의 결제 내역 DataFrame (컬럼: card_holder_pii 포함 가능).
+
+    Returns:
+        pd.DataFrame: 'card_holder_pii' 컬럼 값이 '[REDACTED]'로 치환된 새 DataFrame.
+            빈 DataFrame이 입력되면 동일한 구조의 빈 복사본을 반환한다.
+
+    Raises:
+        TypeError: 입력된 df가 pandas DataFrame이 아닐 경우 발생.
+    """
+    if not isinstance(df, pd.DataFrame):
+        raise TypeError(f"pd.DataFrame 타입이 필요합니다: {type(df).__name__}")
+
+    # Guard Clause: 빈 DataFrame은 불필요한 컬럼 탐색 없이 즉시 복사본 반환
+    if df.empty:
         return df.copy()
-    
-    """Return a copy of the payment data with cardholder PII redacted."""
+
     masked_df = df.copy()
-    if "card_holder_pii" in masked_df.columns:
-        masked_df["card_holder_pii"] = "[REDACTED]"
+    if PII_TARGET_COLUMN in masked_df.columns:
+        masked_df[PII_TARGET_COLUMN] = PII_MASK_TOKEN
     return masked_df
 
 
