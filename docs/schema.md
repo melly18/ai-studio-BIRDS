@@ -63,9 +63,9 @@
 ## 1. calculate_seat_leakage
 - 입력: clean_df: DataFrame (service_name, seat_count, active_users, monthly_cost_krw 필수)
 - 반환: seat_leakage: list[SeatLeakage]
-- 구조: SeatLeakage(frozen dataclass) 1개 = 서비스 1개
+- 구조: SeatLeakage(TypedDict) 1개 = 서비스 1개
 
-| 필드 | 타입 | 설명 |
+| 키 | 타입 | 설명 |
 |---|---|---|
 | service_name | str | 서비스(툴) 이름 |
 | inactive_seats | int | 유휴 좌석 수 = seat_count - active_users (서비스 내 모든 결제 기록 합산) |
@@ -75,7 +75,7 @@
 - 빈 DataFrame 입력 시: []
 - 예외: TypeError(DataFrame 아님), KeyError(필수 컬럼 누락), ValueError(결측·음수·seat_count 0·active_users > seat_count)
 - 예시:
-    [SeatLeakage(service_name="Slack", inactive_seats=12, wasted_spend=96000)]
+    [{"service_name": "Slack", "inactive_seats": 12, "wasted_spend": 96000}]
 
 ## 2. detect_duplicate_tags
 - 입력: clean_df: DataFrame (service_name 필수), catalog: dict (tools 키 필수)
