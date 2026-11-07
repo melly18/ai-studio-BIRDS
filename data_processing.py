@@ -37,10 +37,25 @@ def load_billing_csv(file_path: str) -> pd.DataFrame:
         raise ValueError("결제 내역 CSV를 읽을 수 없습니다.") from exc
 
 def load_saas_catalog(catalog_path: str) -> dict[str, Any]:
-    """공급사 카탈로그 JSON 파일을 읽어 필수 키를 검증하고 반환한다."""
+    """공급사 카탈로그 JSON 파일을 읽어 필수 키를 검증하고 반환한다.
+
+    Args:
+        catalog_path (str): 불러올 공급사 카탈로그 JSON 파일의 경로.
+
+    Returns:
+        dict[str, Any]: ``meta``와 ``tools`` 키를 포함하고 필수 구조를
+            만족하는 공급사 카탈로그.
+
+    Raises:
+        FileNotFoundError: 지정한 카탈로그 파일이 존재하지 않는 경우 발생.
+        ValueError: JSON을 읽을 수 없거나 최상위 구조가 dict가 아니거나,
+            필수 키 또는 도구 정보가 누락되거나 잘못된 형식인 경우 발생.
+    """
     try:
         with open(catalog_path, encoding="utf-8-sig") as catalog_file:
             catalog = json.load(catalog_file)
+    except FileNotFoundError:
+        raise
     except (json.JSONDecodeError, UnicodeDecodeError) as exc:
         raise ValueError("카탈로그 JSON을 읽을 수 없습니다.") from exc
     
