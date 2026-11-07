@@ -7,14 +7,27 @@ from typing import Any
 
 import pandas as pd
 
+CSV_ENCODING = "utf-8-sig"  # Excel 저장 CSV의 BOM 대응
+
 def load_billing_csv(file_path: str) -> pd.DataFrame:
-    """결제 내역 CSV 파일을 원본 문자열 DataFrame으로 불러온다."""
+    """결제 내역 CSV 파일을 원본 문자열 DataFrame으로 불러온다.
+
+    Args:
+        file_path (str): 불러올 결제 내역 CSV 파일의 경로.
+
+    Returns:
+        pd.DataFrame: 모든 값을 문자열로 읽은 결제 내역 DataFrame.
+
+    Raises:
+        FileNotFoundError: 지정한 CSV 파일이 존재하지 않는 경우.
+        ValueError: 인코딩 오류, 빈 파일, CSV 형식 오류인 경우.
+    """
     try:
         return pd.read_csv(
             file_path,
-            encoding="utf-8-sig",
-            dtype=str,
-            keep_default_na=False,
+            encoding=CSV_ENCODING,
+            dtype=str,              # 타입 변환은 이후 정제 단계에서 수행
+            keep_default_na=False,  # "NA" 등 문자열을 결측치로 바꾸지 않음
         )
     except (
         UnicodeDecodeError,
