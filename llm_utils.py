@@ -1,6 +1,4 @@
-"""Utilities for constructing structured prompts for the recommendation workflow."""
-
-from __future__ import annotations
+"""추천 워크플로를 위한 구조화된 프롬프트 생성 유틸리티."""
 
 import json
 from typing import Any, Literal, TypedDict
@@ -72,9 +70,7 @@ _COMMON_INSTRUCTIONS = """\
 
 입력 데이터에 없는 사실, 수치, 기능, 의도, 비용을 추측하지 마라. 사용자 입력이나
 분석 결과에 근거하지 않은 값을 확정하지 마라. 확실하지 않은 내용은 누락하거나
-확인 필요 사항으로 남겨라. 원본 CSV 전체를 요구하거나 프롬프트에 포함하지 말고,
-개인정보와 불필요한 거래 상세를 LLM에 전달하지 마라. CSV는 Python에서 집계한
-요약 데이터만 사용한다.
+확인 필요 사항으로 남겨라. CSV는 Python에서 집계한 요약 데이터만 사용한다.
 
 아래의 CURRENT_STATE는 원본 대화가 아니라 애플리케이션이 현재까지 정리한 상태다.
 CURRENT_EXTRA_DATA도 Python이 이미 계산한 추가 분석 결과다. 두 영역을 원본 대화의
@@ -136,10 +132,10 @@ _CONTEXT_INSTRUCTIONS = """\
 _REPORT_INSTRUCTIONS = """\
 작업 목적: 현재까지의 정리된 상태와 분석 결과를 사용해 최종 추천 리포트를 구성한다.
 - 후보 세트는 최대 3개까지 생성한다.
-- candidate_tools와 pricing_simulation에 있는 도구만 사용한다.
+- candidate_tools와 pricing_simulation에 있는 툴만 사용한다.
 - 비용과 절감액은 Python 계산값을 그대로 사용하며, 새로 계산하거나 변경하지 않는다.
 - must_keep 도구는 해지·교체 대상으로 제안하지 않는다.
-- contract_warnings가 있는 도구는 해당 주의 문구를 포함한다.
+- contract_warnings가 있는 툴은 해당 주의 문구를 포함한다.
 - 각 후보 세트에 장점, matching_reasons, tradeoffs, recommendations를 포함한다.
 - 근거가 없는 수치와 기능을 만들어내지 않는다.
 
@@ -164,9 +160,20 @@ _REPORT_INSTRUCTIONS = """\
 
 
 def _serialize_json(value: Any, name: str) -> str:
-    """Serialize a prompt input and expose unsupported values as a clear error."""
+    """프롬프트 입력을 JSON으로 직렬화하고 지원하지 않는 값을 명확히 보고한다.
+
+    Args:
+        value: JSON으로 변환할 상태 또는 추가 분석 데이터.
+        name: 오류 메시지에 표시할 입력 이름.
+
+    Returns:
+        들여쓰기와 키 정렬이 적용된 JSON 문자열.
+
+    Raises:
+        TypeError: 값에 JSON으로 직렬화할 수 없는 객체가 포함된 경우.
+    """
     try:
-        return json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2)
+        return json.dumps(value, ensure_ascii=False, sort_keys=True, indent=None)
     except (TypeError, ValueError) as error:
         raise TypeError(
             f"{name} must contain only JSON-serializable values"
@@ -178,7 +185,27 @@ def build_prompt_template(
     state: ConversationState,
     extra_data: dict | None = None,
 ) -> str:
-    """Build a purpose-specific prompt with serialized workflow state and analysis."""
+    """목적별 작업 지침과 현재 데이터를 포함한 LLM 프롬프트를 생성한다.
+
+    Args:
+        purpose: 생성 목적이다. ``question``, ``context``, ``report`` 중 하나여야
+            한다.
+        state: 현재 대화에서 정리된 상태다. 원본 대화가 아니라 슬롯, 이력,
+            프로세스 등의 구조화된 데이터를 담는다. ``question_history``와
+            ``answer_history``는 프롬프트에 포함하지 않는다.
+        extra_data: Python에서 미리 계산한 분석 요약 데이터다. ``None``이면
+            빈 객체로 처리한다.
+
+    Returns:
+        현재 상태와 추가 분석 데이터, 목적별 JSON 출력 형식을 포함한 프롬프트
+        문자열.
+
+    Raises:
+        ValueError: ``purpose``가 허용된 값이 아니거나, ``context`` 또는
+            ``report`` 목적에서 상태와 추가 데이터가 모두 비어 있는 경우.
+        TypeError: ``state`` 또는 ``extra_data``의 타입이 올바르지 않거나,
+            입력 데이터가 JSON으로 직렬화되지 않는 경우.
+    """
     if not isinstance(purpose, str) or purpose not in _PURPOSES:
         raise ValueError(
             f"purpose must be one of 'question', 'context', or 'report'; got {purpose!r}"
@@ -187,12 +214,17 @@ def build_prompt_template(
         raise TypeError("state must be a ConversationState-compatible dict")
     if extra_data is not None and not isinstance(extra_data, dict):
         raise TypeError("extra_data must be a dict or None")
-    if purpose in {"context", "report"} and not state and extra_data is None:
+    prompt_state = {
+        key: value
+        for key, value in state.items()
+        if key not in {"question_history", "answer_history"}
+    }
+    if purpose in {"context", "report"} and not prompt_state and extra_data is None:
         raise ValueError(
             f"purpose={purpose!r} requires state or extra_data"
         )
 
-    serialized_state = _serialize_json(state, "state")
+    serialized_state = _serialize_json(prompt_state, "state")
     serialized_extra_data = _serialize_json(
         {} if extra_data is None else extra_data,
         "extra_data",
@@ -200,7 +232,7 @@ def build_prompt_template(
     missing_fields = [
         field
         for field in ("process_codes", "filled_slots", "missing_slots")
-        if field not in state
+        if field not in prompt_state
     ]
     state_note = ""
     if purpose == "question" and missing_fields:
