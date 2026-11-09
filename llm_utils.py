@@ -111,8 +111,8 @@ def _validate_typed_dict_keys(value: Any, schema: Any, path: str) -> None:
         for key, item in value.items():
             _validate_typed_dict_keys(item, args[1], f"{path}[{key!r}]")
     else:
-        if isinstance(schema, type):
-            if not  isinstance(value, schema):
+        if isinstance(schema, type) and schema is not Any:
+            if not isinstance(value, schema):
                 raise TypeError(f"{path} must be of type {schema.__name__}")
 
 def parse_and_validate_json(raw_response: str, schema: type[DTO]) -> DTO:
