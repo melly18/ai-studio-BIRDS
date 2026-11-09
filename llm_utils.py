@@ -256,3 +256,74 @@ def build_prompt_template(
         f"{serialized_extra_data}\n\n"
         f"{instructions}"
     )
+
+USE_MOCK = True
+
+def _call_llm_request_mock(prompt: str) -> str:
+    if "PROMPT_PURPOSE=question" in prompt:
+        return json.dumps(
+            {
+                "round_number": 1,
+                "questions": [
+                    {
+                        "question": "[MOCK] 현재 이 업무에 몇 명이 함께 참여하나요?",
+                        "slot_id": "[MOCK] C-01",
+                        "category": "[MOCK] 팀 규모",
+                        "priority": "[MOCK] required",
+                    }
+                ],
+                "can_finish_now": False,
+            },
+            ensure_ascii=False,
+        )
+    if "PROMPT_PURPOSE=context" in prompt:
+        return json.dumps(
+            {
+                 "process_code": "[MOCK] P3",
+                "summary": "[MOCK] 문서와 프로젝트 관리 업무의 현재 상태를 정리했습니다.",
+                "filled_slots": {},
+                "missing_slots": ["[MOCK] C-01", "[MOCK] C-02", "[MOCK] C-03", "[MOCK] C-04"],
+                "workflow_summary": "[MOCK] 문서와 프로젝트 태스크를 함께 관리합니다.",
+                "bottleneck_memo": "[MOCK] 병목 정보가 아직 충분하지 않습니다.",
+                "culture_notes": "",
+                "must_keep": ["[MOCK] Notion"],
+            },
+            ensure_ascii=False,
+        )
+    if "PROMPT_PURPOSE=report" in prompt:
+        return json.dumps(
+            {
+                "summary": "[MOCK] 최종 진단 요약",
+                "candidate_sets": [
+                    {
+                        "set_id": 1,
+                        "title": "[MOCK] 균형형",
+                        "fit_percent": 94,
+                        "monthly_cost_krw": 0,
+                        "monthly_saving_krw": 0,
+                        "matching_reasons": [],
+                        "tradeoffs": [],
+                        "recommendations": [],
+                        "approval_summary": "[MOCK] 대표 결재용 요약",
+                    }
+                ],
+            },
+            ensure_ascii=False,
+        )
+
+def call_llm_request(prompt: str) -> str:
+    """
+    요청된 프롬프트를 LLM에 전달하고 응답을 반환한다. 현재는 모의 응답을 반환하도록 설정되어 있다.
+    Args:
+        prompt (str): LLM에 전달할 프롬프트 문자열.
+    Returns:
+        str: LLM의 응답 문자열.
+    Raises:
+        AssertionError: prompt가 문자열이 아닌 경우.
+        AssertionError: prompt에 '출력 형식:'이 포함되어 있지 않은 경우.
+    """
+    assert isinstance(prompt, str), f"prompt must be a string, not {type(prompt)}"
+    assert "출력 형식:" in prompt, f"prompt must contain '출력 형식:' to indicate expected JSON output"
+    if USE_MOCK:
+        return _call_llm_request_mock(prompt)
+    return "Not Ready for real LLM request"  #13주차 구현 예정
