@@ -1,7 +1,8 @@
 """추천 워크플로를 위한 구조화된 프롬프트 생성 유틸리티."""
 
 import json
-from typing import Any, Literal, TypedDict
+import re
+from typing import Any, Literal, TypedDict, TypeVar, cast, get_args, get_origin, get_type_hints, is_typeddict
 
 
 PromptPurpose = Literal["question", "context", "report"]
@@ -59,6 +60,90 @@ class CompanyContext(TypedDict):
 class FinalReport(TypedDict):
     summary: str
     candidate_sets: list[dict[str, Any]]
+
+
+DTO = TypeVar("DTO")
+_JSON_SCHEMAS = (QuestionBatch, CompanyContext, FinalReport)
+
+
+def _validate_typed_dict_keys(value: Any, schema: Any, path: str) -> None:
+    if is_typeddict(schema):
+        if not isinstance(value, dict):
+            raise TypeError(f"{path} must be an object")
+
+        required_keys = schema.__required_keys__
+        allowed_keys = schema.__annotations__
+        missing_keys = required_keys - value.keys()
+        extra_keys = value.keys() - allowed_keys.keys()
+        if missing_keys:
+            raise ValueError(
+                f"{path} is missing required keys: {sorted(missing_keys)!r}"
+            )
+        if extra_keys:
+            raise ValueError(
+                f"{path} contains unsupported keys: {sorted(extra_keys)!r}"
+            )
+
+        annotations = get_type_hints(schema)
+        for key, annotation in annotations.items():
+            if key in value:
+                _validate_typed_dict_keys(value[key], annotation, f"{path}.{key}")
+        return
+
+    origin = get_origin(schema)
+    args = get_args(schema)
+    if origin is list and args:
+        if not isinstance(value, list):
+            return
+        for index, item in enumerate(value):
+            _validate_typed_dict_keys(item, args[0], f"{path}[{index}]")
+    elif origin is dict and len(args) == 2:
+        if not isinstance(value, dict):
+            return
+        for key, item in value.items():
+            _validate_typed_dict_keys(item, args[1], f"{path}[{key!r}]")
+
+
+def parse_and_validate_json(raw_response: str, schema: type[DTO]) -> DTO:
+    """LLM 응답에서 JSON 객체를 추출하고 지정된 DTO의 키 구조를 검증한다.
+
+    Args:
+        raw_response: 일반 JSON 또는 마크다운 코드 펜스로 감싼 JSON 문자열.
+        schema: 허용된 출력 DTO 타입인 ``QuestionBatch``, ``CompanyContext``
+            또는 ``FinalReport``.
+
+    Returns:
+        지정된 DTO 구조를 따르는 파싱된 JSON 객체.
+
+    Raises:
+        ValueError: 입력 문자열이 아니거나 JSON이 유효하지 않거나, 필수 키가
+            없거나 허용되지 않은 키가 포함된 경우.
+        TypeError: 스키마가 허용된 DTO 타입이 아니거나 JSON 최상위 값이 객체가
+            아닌 경우.
+    """
+    if not isinstance(raw_response, str):
+        raise ValueError("raw_response must be a string")
+    if not isinstance(schema, type) or schema not in _JSON_SCHEMAS:
+        raise TypeError(
+            "schema must be QuestionBatch, CompanyContext, or FinalReport"
+        )
+
+    json_text = re.sub(
+        r"^\s*```(?:json)?\s*|\s*```\s*$",
+        "",
+        raw_response.strip(),
+        flags=re.IGNORECASE,
+    )
+    try:
+        parsed = json.loads(json_text)
+    except json.JSONDecodeError as error:
+        raise ValueError("raw_response does not contain valid JSON") from error
+
+    if not isinstance(parsed, dict):
+        raise TypeError("JSON response must be an object")
+
+    _validate_typed_dict_keys(parsed, schema, "response")
+    return cast(DTO, parsed)
 
 
 _PURPOSES = {"question", "context", "report"}
