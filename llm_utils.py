@@ -92,17 +92,28 @@ def _validate_typed_dict_keys(value: Any, schema: Any, path: str) -> None:
 
     origin = get_origin(schema)
     args = get_args(schema)
-    if origin is list and args:
+    if origin is Literal:
+        if not any(
+            type(value) is type(expected) and value == expected
+            for expected in args
+        ):
+            raise ValueError(
+                f"{path} must be one of {args!r}; got {value!r}"
+            )
+    elif origin is list and args:
         if not isinstance(value, list):
-            return
+            raise TypeError(f"{path} must be a list")
         for index, item in enumerate(value):
             _validate_typed_dict_keys(item, args[0], f"{path}[{index}]")
     elif origin is dict and len(args) == 2:
         if not isinstance(value, dict):
-            return
+            raise TypeError(f"{path} must be an object")
         for key, item in value.items():
             _validate_typed_dict_keys(item, args[1], f"{path}[{key!r}]")
-
+    else:
+        if isinstance(schema, type):
+            if not  isinstance(value, schema):
+                raise TypeError(f"{path} must be of type {schema.__name__}")
 
 def parse_and_validate_json(raw_response: str, schema: type[DTO]) -> DTO:
     """LLM 응답에서 JSON 객체를 추출하고 지정된 DTO의 키 구조를 검증한다.
@@ -124,16 +135,19 @@ def parse_and_validate_json(raw_response: str, schema: type[DTO]) -> DTO:
     if not isinstance(raw_response, str):
         raise ValueError("raw_response must be a string")
     if not isinstance(schema, type) or schema not in _JSON_SCHEMAS:
-        raise TypeError(
-            "schema must be QuestionBatch, CompanyContext, or FinalReport"
-        )
+        schema_names = ", ".join([s.__name__ for s in _JSON_SCHEMAS])
+        raise TypeError(f"schema must be one of: {schema_names}")
 
-    json_text = re.sub(
-        r"^\s*```(?:json)?\s*|\s*```\s*$",
-        "",
-        raw_response.strip(),
-        flags=re.IGNORECASE,
+    match = re.search(
+        r"```(?:json)?\s*(.*?)\s*```",
+        raw_response,
+        re.DOTALL | re.IGNORECASE,
     )
+
+    if match:
+        json_text = match.group(1).strip()
+    else:
+        json_text = raw_response.strip()
     try:
         parsed = json.loads(json_text)
     except json.JSONDecodeError as error:
@@ -354,7 +368,7 @@ def _call_llm_request_mock(prompt: str) -> str:
                         "question": "[MOCK] 현재 이 업무에 몇 명이 함께 참여하나요?",
                         "slot_id": "[MOCK] C-01",
                         "category": "[MOCK] 팀 규모",
-                        "priority": "[MOCK] required",
+                        "priority": "required",      #파싱 함수 로직을 위한 mock 제거
                     }
                 ],
                 "can_finish_now": False,

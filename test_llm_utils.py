@@ -1,6 +1,8 @@
 import pytest
+import json
 
 from llm_utils import build_prompt_template
+from llm_utils import parse_and_validate_json, QuestionBatch, CompanyContext, SlotValue
 
 
 def test_build_prompt_template_normal():
@@ -70,3 +72,99 @@ def test_build_prompt_template_edge():
     assert "PROMPT_PURPOSE=question" in prompt
     assert "출력 형식:" in prompt
     assert "주의: 현재 상태에 다음 필드가 없어 질문 생성에 사용할 수 없다" in prompt
+
+# Test JSON parsing and validation
+
+def test_parse_and_validate_json_normal():
+    raw_response = json.dumps({
+                "round_number": 1,
+                "questions": [
+                    {
+                        "question": "[MOCK] 현재 이 업무에 몇 명이 함께 참여하나요?",
+                        "slot_id": "[MOCK] C-01",
+                        "category": "[MOCK] 팀 규모",
+                        "priority": "required",
+                    }
+                ],
+                "can_finish_now": False,
+            })
+    schema = QuestionBatch
+    result = parse_and_validate_json(raw_response, schema)
+    assert result == {
+                "round_number": 1,
+                "questions": [
+                    {
+                        "question": "[MOCK] 현재 이 업무에 몇 명이 함께 참여하나요?",
+                        "slot_id": "[MOCK] C-01",
+                        "category": "[MOCK] 팀 규모",
+                        "priority": "required",
+                    }
+                ],
+                "can_finish_now": False,
+            }
+
+
+def test_parse_and_validate_json_wrong_schema():
+    raw_response = json.dumps({
+                    "round_number": 1,
+                    "questions": [
+                        {
+                            "question": "[MOCK] 현재 이 업무에 몇 명이 함께 참여하나요?",
+                            "slot_id": "[MOCK] C-01",
+                            "category": "[MOCK] 팀 규모",
+                            "priority": "required",
+                        }
+                    ],
+                    "can_finish_now": False,
+                })
+    schema = CompanyContext
+
+    with pytest.raises(ValueError):
+        result = parse_and_validate_json(raw_response, schema)
+
+def test_parse_and_validate_json_invalid_dto():
+    raw_response = json.dumps({
+                    "round_number": 1,
+                    "questions": [
+                        {
+                            "question": "[MOCK] 현재 이 업무에 몇 명이 함께 참여하나요?",
+                            "slot_id": "[MOCK] C-01",
+                            "category": "[MOCK] 팀 규모",
+                            "priority": "required",
+                        }
+                    ],
+                    "can_finish_now": False,
+                })
+    schema = SlotValue
+
+    with pytest.raises(TypeError):
+        result = parse_and_validate_json(raw_response, schema)
+
+def test_parse_and_validate_json_codefence():
+    raw_response = json.dumps({
+                    "round_number": 1,
+                    "questions": [
+                        {
+                            "question": "[MOCK] 현재 이 업무에 몇 명이 함께 참여하나요?",
+                            "slot_id": "[MOCK] C-01",
+                            "category": "[MOCK] 팀 규모",
+                            "priority": "required",
+                        }
+                    ],
+                    "can_finish_now": False,
+                })
+    raw_response_with_codefence = f"```\n{raw_response}\n```"
+    schema = QuestionBatch
+    result = parse_and_validate_json(raw_response_with_codefence, schema)
+    assert result == {
+                    "round_number": 1,
+                    "questions": [
+                        {
+                            "question": "[MOCK] 현재 이 업무에 몇 명이 함께 참여하나요?",
+                            "slot_id": "[MOCK] C-01",
+                            "category": "[MOCK] 팀 규모",
+                            "priority": "required",
+                        }
+                    ],
+                    "can_finish_now": False,
+                }
