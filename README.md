@@ -118,7 +118,7 @@ python pipeline.py
 
 | 번호 | 리뷰 대상 모듈 | 수신한 리뷰 코멘트 요지 | 수용/보류 판단 및 사유 | 반영 내역 및 관련 커밋 |
 | --- | --- | --- | --- | --- |
-| 1 | `data_processing.py` / `quant_analysis.py` | *(박지우 님 교차 리뷰 코멘트 1건 기입란)* | **수용** — *(판단 사유 기입)* | *(관련 커밋 해시 기입)* |
+| 1 | `data_processing.py` / `quant_analysis.py` | *pandas 3.1에서 `work.at[...]`로 없는 열에 값 설정, `drop(inplace=True)` 사용 시 Pandas4Warning 발생 → `.loc`와 `work = work.drop(idx)`로 변경 제안* | ** 향후 pandas 버전에서 KeyError·제거 예정 API이므로 교체. 샘플 데이터 전후 비교로 결과 80행·경고 50건(문구·순서) 동일함을 확인해 설계 변경 없음** — ** | *커밋 해시:250a947* |
 | 2 | `data_processing.py` / `llm_utils.py` | *(박지우 님 교차 리뷰 코멘트 2건 기입란)* | **수용/보류** — *(판단 사유 기입)* | *(관련 커밋 해시 기입)* |
 
 ---

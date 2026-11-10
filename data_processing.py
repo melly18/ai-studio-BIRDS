@@ -91,29 +91,6 @@ def load_saas_catalog(catalog_path: str) -> dict[str, Any]:
 # 모듈 상단 상수 정의 (매직 스트링 상수화 리팩터링)
 PII_TARGET_COLUMN: str = "card_holder_pii"
 PII_MASK_TOKEN: str = "[REDACTED]"
-REQUIRED_COLUMNS: tuple[str, ...] = (
-    "tx_id",
-    "billing_date",
-    "service_name",
-    "department",
-    "billing_cycle",
-    "seat_count",
-    "active_users",
-    "billing_amount_krw",
-    "card_holder_pii",
-)
-EMPTY_COLUMNS: tuple[str, ...] = (
-    "tx_id",
-    "billing_date",
-    "service_name",
-    "department",
-    "billing_cycle",
-    "seat_count",
-    "active_users",
-    "billing_amount_krw",
-    "card_holder_pii",
-    "monthly_cost_krw",
-)
 
 
 def mask_pii_data(df: pd.DataFrame) -> pd.DataFrame:
@@ -140,6 +117,31 @@ def mask_pii_data(df: pd.DataFrame) -> pd.DataFrame:
     if PII_TARGET_COLUMN in masked_df.columns:
         masked_df[PII_TARGET_COLUMN] = PII_MASK_TOKEN
     return masked_df
+
+
+CLEAN_REQUIRED_COLUMNS: tuple[str, ...] = (
+    "tx_id",
+    "billing_date",
+    "service_name",
+    "department",
+    "billing_cycle",
+    "seat_count",
+    "active_users",
+    "billing_amount_krw",
+    "card_holder_pii",
+)
+CLEAN_OUTPUT_COLUMNS: tuple[str, ...] = (
+    "tx_id",
+    "billing_date",
+    "service_name",
+    "department",
+    "billing_cycle",
+    "seat_count",
+    "active_users",
+    "billing_amount_krw",
+    "card_holder_pii",
+    "monthly_cost_krw",
+)
 
 
 def _coerce_text(value: object) -> str:
@@ -222,11 +224,10 @@ def clean_billing_csv(df: pd.DataFrame, catalog: dict[str, Any]) -> tuple[pd.Dat
     """결제 내역 CSV를 정제하여 표준 스키마와 경고 목록을 반환한다.
 
     정제 단계 요약:
-        1. 필수 열 검증 및 빈 입력 처리
-        2. tx_id 중복 제거 및 자동 발급
-        3. billing_date, service_name, department, billing_cycle 정규화
-        4. seat_count, active_users, billing_amount_krw 검증 및 보정
-        5. monthly_cost_krw 계산과 최종 컬럼 재배치
+        필수 열 검사 → 빈 입력 처리 → tx_id 중복 제외 → billing_date 정규화
+        → service_name 표준화 → department 보정 → billing_cycle 정규화
+        → seat_count 검증 → active_users 검증 → billing_amount_krw 검증
+        → monthly_cost_krw 계산 → 마지막에 빈 tx_id 자동 발급
 
     Args:
         df (pd.DataFrame): 원본 결제 내역 DataFrame. 각 컬럼 값은 문자열로 들어온다.
@@ -239,16 +240,16 @@ def clean_billing_csv(df: pd.DataFrame, catalog: dict[str, Any]) -> tuple[pd.Dat
         ValueError: 필수 컬럼이 누락된 경우 발생한다.
     """
     if df is None:
-        return pd.DataFrame(columns=list(EMPTY_COLUMNS)), []
+        return pd.DataFrame(columns=list(CLEAN_OUTPUT_COLUMNS)), []
 
     # FIXED: T07 재현을 위해 필수 열 검사를 빈 입력 처리보다 먼저 수행
-    missing = [col for col in REQUIRED_COLUMNS if col not in df.columns]
+    missing = [col for col in CLEAN_REQUIRED_COLUMNS if col not in df.columns]
     if missing:
         raise ValueError(f"필수 열 누락: {missing[0]}")
 
     # 0. 빈 입력 처리
     if len(df) == 0:
-        return pd.DataFrame(columns=list(EMPTY_COLUMNS)), []
+        return pd.DataFrame(columns=list(CLEAN_OUTPUT_COLUMNS)), []
 
     work = df.copy()
     warnings: list[dict] = []
