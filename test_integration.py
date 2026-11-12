@@ -231,10 +231,14 @@ def test_run_pipeline_from_data_case_2():
     }
     initial_state = None
 
-    result = run_pipeline_from_data(raw_df, catalog, initial_state)
-    assert result["clean_data"] == []
-    assert result["warnings"] == []
-    assert result["summary"] == {
+    assert run_pipeline_from_data(raw_df, catalog, initial_state) == {
+        "meta": {
+                    "use_mock": True,
+                    "process_codes": ["P1", "P3", "P5"],
+                },
+        "clean_data": [],
+        "warnings": [],
+        "summary": {
             'valid_transaction_count': 0,
             'warning_count': 0,
             'total_monthly_cost_krw': 0,
@@ -242,4 +246,33 @@ def test_run_pipeline_from_data_case_2():
             'total_wasted_spend_krw': 0,
             'seat_leakage': [],
             'duplicate_pairs': [],
+        },
+        "llm_questions": {
+            'round_number': 1,
+            'questions': [
+                {
+                    'question': '[MOCK] 현재 이 업무에 몇 명이 함께 참여하나요?',
+                    'slot_id': '[MOCK] C-01',
+                    'category': '[MOCK] 팀 규모',
+                    'priority': 'required',
+                },
+            ],
+            'can_finish_now': False,
+        },
+        "llm_report": {
+            'summary': '[MOCK] 최종 진단 요약',
+            'candidate_sets': [
+                {
+                    'set_id': 1,
+                    'title': '[MOCK] 균형형',
+                    'fit_percent': 94,
+                    'monthly_cost_krw': 0,
+                    'monthly_saving_krw': 0,
+                    'matching_reasons': [],
+                    'tradeoffs': [],
+                    'recommendations': [],
+                    'approval_summary': '[MOCK] 대표 결재용 요약',
+                },
+            ],
         }
+    }
