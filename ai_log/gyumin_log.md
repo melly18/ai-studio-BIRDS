@@ -19,3 +19,16 @@
   1. 상대 모듈(`quant_analysis.py`)을 직접 수정하면 해당 모듈의 단위 테스트가 깨지므로, `pipeline.py` 내에 어댑터 함수(`adapt_duplicate_pairs_for_json`)를 구현하여 `set` 데이터를 정렬된 `list[str]`로 변환 후 LLM 모듈에 전달하도록 수정.
   2. `docs/schema.md` 순서(`load -> mask_pii_data -> clean_billing_csv`)로 파이프라인을 재정렬하고, 각 경계 지점마다 `assert` 문을 배치하여 마스킹 여부(`card_holder_pii == "[REDACTED]"`)와 요약 dict 필수 키 누락을 즉시 검증하도록 방어 로직 강화.
 - **검증 및 판단 메모**: 고정 fixture(`make_fixture()`) 및 100건 샘플 CSV 관통 실행 성공, `pytest -vv` 전체 통과 확인 후 `feat:` 커밋 완료. 개별 단위 테스트를 통과한 모듈이라도 통합 경계에서 직렬화 타입 불일치가 발생할 수 있으며, 어댑터 함수가 책임 소재를 보존하는 가장 안전한 해결책임을 확인.
+
+---
+
+## [2026-11-15] Streamlit 백엔드 파사드(`backend.py`) 분리 및 상태 초기화 설계 (담당: 강규민)
+
+* **대상 모듈**: `backend.py`, `app.py` / **관련 커밋**: `c2b4590`
+* **초기 프롬프트(요지)**: 10주차 데이터 정제·분석 모듈을 Streamlit 앱에서 호출하려고 함. CSV 업로드 후 부서별 필터링, KPI 계산, 차트 데이터를 집계하는 UI 코드를 작성하라.
+* **AI 생성 결과(요지)**: `app.py` 내부에 pandas의 `df[df["department"] == ...]` 연산을 직접 삽입하고, 매 Rerun마다 `st.session_state.audit_result = None`으로 무조건 초기화하는 코드를 생성함.
+* **발견한 문제(취약점·오류·품질)**:
+1. [아키텍처 위반] UI 파일(`app.py`) 안에 데이터 가공(pandas) 로직이 혼재되어 11주차 핵심 평가 기준인 'UI-백엔드 분리'를 위반함.
+2. [상태 관리 오류] 초기화 관용구(`if "키" not in st.session_state:`) 누락으로, 사이드바 필터를 조작할 때마다 전체 스크립트가 Rerun 되며 이전 분석 결과가 날아가는 버그 확인.
+* **수정 보완 내역**: UI 내부의 pandas 연산을 완전히 제거하고 `backend.py`(파사드 헬퍼 모듈)를 신설해 로직을 위임함. `app.py` 최상단에 `if "audit_result" not in st.session_state:` 조건문을 적용하여 상태가 보존되도록 리팩터링함.
+* **검증 및 판단 메모**: 기존 백엔드 `pytest` 46건 통과 확인 및 `streamlit run app.py` 브라우저 정상 렌더링 검증 후 커밋 완료. Streamlit 특유의 Rerun 모델에서는 AI에게 UI 생성을 맡길 때 상태 보존(`session_state`) 여부를 반드시 의심하고 통제해야 함을 확인함.
