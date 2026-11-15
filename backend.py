@@ -1,6 +1,6 @@
 """BIRDS 11주차 Streamlit UI 전용 백엔드 래퍼(Facade) 모듈.
 
-UI(app.py)와 데이터 가공 로직을 철저히 분리하기 위해
+UI(app.py)와 데이터 가공 로직을 철저히 분리하기 위해,
 파일 로딩, 정제/마스킹 파이프라인 실행, 사이드바 필터링, KPI 산출,
 차트용 데이터 집계 함수 제공.
 """
@@ -19,7 +19,7 @@ DEFAULT_CATALOG_PATH = "saas_catalog_30_sample.json"
 
 
 def load_csv_with_fallback(uploaded_file: IO[bytes]) -> pd.DataFrame:
-    """업로드된 CSV 파일 객체 읽어 DataFrame으로 반환(cp949 재시도 포함).
+    """업로드된 CSV 파일 객체를 읽어 DataFrame으로 반환 (cp949 재시도 포함).
 
     Args:
         uploaded_file: st.file_uploader가 반환한 UploadedFile 객체.
@@ -46,6 +46,17 @@ def _call_with_supported_args(func: Any, *args: Any) -> Any:
     return func(*args[:param_count])
 
 
+def _to_json_safe(value: Any) -> Any:
+    """set 등 JSON 직렬화가 불가능한 타입을 재귀적으로 변환."""
+    if isinstance(value, set):
+        return sorted(str(item) for item in value)
+    if isinstance(value, dict):
+        return {str(k): _to_json_safe(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_to_json_safe(item) for item in value]
+    return value
+
+
 def run_audit_from_df(
     raw_df: pd.DataFrame,
     catalog_path: str = DEFAULT_CATALOG_PATH,
@@ -69,8 +80,11 @@ def run_audit_from_df(
 
     catalog = dp.load_saas_catalog(catalog_path)
 
-    # 1. 데이터 정제 및 PII 마스킹
-    cleaned_df = _call_with_supported_args(dp.clean_billing_csv, raw_df, catalog)
+    # 1. PII 마스킹 및 데이터 정제 (표준 스키마 순서 준수)
+    masked_raw_df = dp.mask_pii_data(raw_df)
+    cleaned_df = _call_with_supported_args(
+        dp.clean_billing_csv, masked_raw_df, catalog
+    )
     masked_df = dp.mask_pii_data(cleaned_df)
 
     if masked_df.empty:
@@ -84,14 +98,34 @@ def run_audit_from_df(
         qa.detect_duplicate_tags, masked_df, catalog
     )
 
-    # 3. Mock LLM 진단 연동 (10주차 모듈 호환)
-    llm_questions: dict[str, Any] = {}
-    llm_report: dict[str, Any] = {}
-    if hasattr(llm, "generate_Clarifying_questions"):
-        llm_questions = llm.generate_Clarifying_questions(
-            {"seat_leakage": seat_leakage, "duplicate_tags": duplicate_tags},
-            use_mock=True,
-        )
+    # 3. Mock LLM 진단 연동 (llm_utils.py 실제 시그니처 호출)
+    initial_state: dict[str, Any] = {
+        "process_codes": ["P1", "P2", "P3", "P4", "P5"],
+        "filled_slots": {},
+        "missing_slots": ["C-01", "C-02", "C-03", "C-04"],
+    }
+    extra_data: dict[str, Any] = _to_json_safe(
+        {
+            "seat_leakage": seat_leakage,
+            "duplicate_tags": duplicate_tags,
+        }
+    )
+
+    question_prompt = llm.build_prompt_template(
+        "question", initial_state, extra_data
+    )
+    question_raw = llm.call_llm_request(question_prompt)
+    llm_questions = llm.parse_and_validate_json(
+        question_raw, llm.QuestionBatch
+    )
+
+    report_prompt = llm.build_prompt_template(
+        "report", initial_state, extra_data
+    )
+    report_raw = llm.call_llm_request(report_prompt)
+    llm_report = llm.parse_and_validate_json(
+        report_raw, llm.FinalReport
+    )
 
     return {
         "clean_df": masked_df,
@@ -129,10 +163,7 @@ def filter_and_summarize(
     department: str = "전체",
     billing_cycle: str = "전체",
 ) -> dict[str, Any]:
-    """사이드바 필터 조건에 맞춰 DataFrame을 필터링하고 상단 KPI 지표를 계산.
-
-    app.py 내부에 pandas 필터링/합산 로직을 작성하지 않도록 백엔드에서 일괄 처리.
-    """
+    """사이드바 필터 조건에 맞춰 DataFrame을 필터링하고 상단 KPI 지표 계산."""
     view_df = clean_df.copy()
 
     if department != "전체" and "department" in view_df.columns:
@@ -141,14 +172,12 @@ def filter_and_summarize(
     if billing_cycle != "전체" and "billing_cycle" in view_df.columns:
         view_df = view_df[view_df["billing_cycle"] == billing_cycle]
 
-    # 비용 컬럼 식별
     cost_col = next(
         (c for c in ["monthly_cost", "amount", "payment_amount"] if c in view_df.columns),
         None,
     )
     total_cost = int(view_df[cost_col].sum()) if cost_col and not view_df.empty else 0
 
-    # 유휴 좌석 및 낭비 비용 계산
     wasted_seats = 0
     wasted_cost = 0
     if "seat_count" in view_df.columns and "active_users" in view_df.columns:
@@ -171,7 +200,7 @@ def filter_and_summarize(
 def get_chart_data(filtered_df: pd.DataFrame) -> pd.DataFrame:
     """st.bar_chart 시각화를 위해 서비스별 구독 비용 집계 DataFrame 반환."""
     if filtered_df.empty:
-        return pd.DataFrame(columns=["service_name", "cost"])
+        return pd.DataFrame(columns=["서비스명", "월간 구독 비용(원)"])
 
     service_col = next(
         (c for c in ["canonical_name", "service_name", "raw_service_name"] if c in filtered_df.columns),
@@ -183,7 +212,7 @@ def get_chart_data(filtered_df: pd.DataFrame) -> pd.DataFrame:
     )
 
     if not service_col or not cost_col:
-        return pd.DataFrame(columns=["service_name", "cost"])
+        return pd.DataFrame(columns=["서비스명", "월간 구독 비용(원)"])
 
     chart_df = (
         filtered_df.groupby(service_col, as_index=False)[cost_col]
