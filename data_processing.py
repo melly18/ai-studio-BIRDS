@@ -245,7 +245,7 @@ def clean_billing_csv(df: pd.DataFrame, catalog: dict[str, Any]) -> tuple[pd.Dat
     # FIXED: T07 재현을 위해 필수 열 검사를 빈 입력 처리보다 먼저 수행
     missing = [col for col in CLEAN_REQUIRED_COLUMNS if col not in df.columns]
     if missing:
-        raise ValueError(f"필수 열 누락: {missing[0]}")
+        raise ValueError(f"필수 열 누락: {', '.join(missing)}")
 
     # 0. 빈 입력 처리
     if len(df) == 0:
