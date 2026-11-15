@@ -30,6 +30,43 @@ st.caption("스타트업 결제 내역 CSV를 업로드하면 부서별 SaaS 비
 # 4. 잘못된 CSV(ValueError, KeyError) 발생 시 st.error 안내 후 st.stop() 방어
 # =====================================================================
 
+# 1. 입력: 파일 업로드
+uploaded = st.file_uploader("결제 내역 CSV를 드래그 앤 드롭하세요", type="csv")
+
+# 2. 가드: 업로드 전이면 안내 후 중단
+if uploaded is None:
+    # 파일을 지운 경우 이전 결과가 남지 않도록 상태 초기화
+    st.session_state.audit_result = None
+    st.session_state.uploaded_file_id = None
+    st.info("결제 내역 CSV 파일을 업로드하면 SaaS 비용 진단이 시작됩니다.")
+    st.stop()
+
+# 3. 처리: 새 파일일 때만 백엔드 파이프라인 실행 (필터 조작 등 Rerun 시 재연산 방지)
+if st.session_state.uploaded_file_id != uploaded.file_id:
+    try:
+        with st.spinner("결제 내역을 분석하는 중입니다..."):
+            raw_df = backend.load_csv_with_fallback(uploaded)  # cp949 재시도 포함
+            st.session_state.audit_result = backend.run_audit_from_df(raw_df)
+        st.session_state.uploaded_file_id = uploaded.file_id
+    except (ValueError, KeyError) as exc:
+        st.session_state.audit_result = None
+        st.session_state.uploaded_file_id = None
+        st.error(f"CSV 파일을 처리할 수 없습니다. 필수 컬럼과 형식을 확인해 주세요.\n\n상세: {exc}")
+        st.stop()
+    except FileNotFoundError:
+        st.session_state.audit_result = None
+        st.session_state.uploaded_file_id = None
+        st.error("분석에 필요한 SaaS 카탈로그 파일을 찾을 수 없습니다. 관리자에게 문의하세요.")
+        st.stop()
+
+# 4. 결과 안내: 정상 업로드·검토 완료 표시 (Rerun 후에도 유지)
+result = st.session_state.audit_result
+st.success(
+    f"✅ '{uploaded.name}' 업로드 완료 · 검토 완료 — "
+    f"유효 결제 내역 {len(result['clean_df']):,}건 "
+    f"(정제 중 제외·보정 {len(result['clean_warnings']):,}건)"
+)
+
 
 # =====================================================================
 # [TODO: UI B2 - 박지우 님 작업 구역]
