@@ -30,12 +30,19 @@ def load_csv_with_fallback(uploaded_file: IO[bytes]) -> pd.DataFrame:
     Raises:
         ValueError: 파일이 비어 있거나 CSV 파싱에 실패한 경우.
     """
+    # 10주차 load_billing_csv와 동일하게 모든 값을 문자열로 읽음
+    read_kwargs = {"dtype": str, "keep_default_na": False}
     try:
-        return pd.read_csv(uploaded_file, encoding="utf-8")
-    except UnicodeDecodeError:
-        uploaded_file.seek(0)
-        return pd.read_csv(uploaded_file, encoding="cp949")
-    except Exception as exc:
+        try:
+            return pd.read_csv(uploaded_file, encoding="utf-8", **read_kwargs)
+        except UnicodeDecodeError:
+            uploaded_file.seek(0)  # 파일 포인터를 처음으로 되돌린 뒤 재시도
+            return pd.read_csv(uploaded_file, encoding="cp949", **read_kwargs)
+    except (
+        UnicodeDecodeError,
+        pd.errors.EmptyDataError,
+        pd.errors.ParserError,
+    ) as exc:
         raise ValueError(f"CSV 파일을 읽을 수 없습니다: {exc}") from exc
 
 
