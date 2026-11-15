@@ -81,6 +81,22 @@ st.success(
 # 3. backend.filter_and_summarize(clean_df, selected_dept, selected_cycle) 호출
 # 4. st.columns(3) 및 st.metric 3종(총 월간 구독 비용, 유휴 좌석 수, 추정 낭비 금액) 출력
 # =====================================================================
+clean_df = st.session_state.audit_result["clean_df"]
+options = backend.get_filter_options(clean_df)
+
+selected_dept = st.sidebar.selectbox(
+    "부서 선택",
+    options["departments"],
+    key="dept_filter",
+)
+selected_cycle = st.sidebar.selectbox(
+    "결제 주기",
+    options["billing_cycles"],
+    key="cycle_filter",
+)
+
+summary = backend.filter_and_summarize(clean_df, selected_dept, selected_cycle)
+filtered_df = summary["filtered_df"]
 
 
 # =====================================================================
