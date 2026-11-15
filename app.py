@@ -98,6 +98,17 @@ selected_cycle = st.sidebar.selectbox(
 summary = backend.filter_and_summarize(clean_df, selected_dept, selected_cycle)
 filtered_df = summary["filtered_df"]
 
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.metric("총 월간 구독 비용", f"{summary['total_cost']:,}원")
+
+with col2:
+    st.metric("유휴 좌석 수", f"{summary['wasted_seats']:,}")
+
+with col3:
+    st.metric("월간 추정 낭비 금액", f"{summary['wasted_cost']:,}원")
+
 
 # =====================================================================
 # [TODO: UI B3 - 김서연 님 작업 구역]
