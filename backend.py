@@ -19,6 +19,10 @@ import llm_utils as llm
 # 실행 위치(cwd)와 무관하게 backend.py와 같은 폴더의 카탈로그를 사용
 DEFAULT_CATALOG_PATH = str(Path(__file__).parent / "saas_catalog_30_sample.json")
 
+# 정제 스키마(data_processing.CLEAN_OUTPUT_COLUMNS) 기준 컬럼명
+COST_COL = "monthly_cost_krw"
+SERVICE_COL = "service_name"
+
 
 def load_csv_with_fallback(uploaded_file: IO[bytes]) -> pd.DataFrame:
     """업로드된 CSV 파일 객체를 읽어 DataFrame으로 반환 (cp949 재시도 포함).
@@ -182,21 +186,16 @@ def filter_and_summarize(
     if billing_cycle != "전체" and "billing_cycle" in view_df.columns:
         view_df = view_df[view_df["billing_cycle"] == billing_cycle]
 
-    cost_col = next(
-        (c for c in ["monthly_cost", "amount", "payment_amount"] if c in view_df.columns),
-        None,
-    )
-    total_cost = int(view_df[cost_col].sum()) if cost_col and not view_df.empty else 0
+    total_cost = int(view_df[COST_COL].sum()) if not view_df.empty else 0
 
     wasted_seats = 0
     wasted_cost = 0
     if "seat_count" in view_df.columns and "active_users" in view_df.columns:
         unused = (view_df["seat_count"] - view_df["active_users"]).clip(lower=0)
         wasted_seats = int(unused.sum())
-        if cost_col:
-            safe_seats = view_df["seat_count"].replace(0, pd.NA)
-            unit_cost = (view_df[cost_col] / safe_seats).fillna(0)
-            wasted_cost = int((unused * unit_cost).sum())
+        safe_seats = view_df["seat_count"].replace(0, pd.NA)
+        unit_cost = (view_df[COST_COL] / safe_seats).fillna(0)
+        wasted_cost = int((unused * unit_cost).sum())
 
     return {
         "filtered_df": view_df,
@@ -212,22 +211,10 @@ def get_chart_data(filtered_df: pd.DataFrame) -> pd.DataFrame:
     if filtered_df.empty:
         return pd.DataFrame(columns=["서비스명", "월간 구독 비용(원)"])
 
-    service_col = next(
-        (c for c in ["canonical_name", "service_name", "raw_service_name"] if c in filtered_df.columns),
-        None,
-    )
-    cost_col = next(
-        (c for c in ["monthly_cost", "amount", "payment_amount"] if c in filtered_df.columns),
-        None,
-    )
-
-    if not service_col or not cost_col:
-        return pd.DataFrame(columns=["서비스명", "월간 구독 비용(원)"])
-
     chart_df = (
-        filtered_df.groupby(service_col, as_index=False)[cost_col]
+        filtered_df.groupby(SERVICE_COL, as_index=False)[COST_COL]
         .sum()
-        .rename(columns={service_col: "서비스명", cost_col: "월간 구독 비용(원)"})
+        .rename(columns={SERVICE_COL: "서비스명", COST_COL: "월간 구독 비용(원)"})
         .sort_values(by="월간 구독 비용(원)", ascending=False)
     )
     return chart_df
