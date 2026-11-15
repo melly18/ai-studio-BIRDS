@@ -49,15 +49,15 @@
 - **검증 및 판단 메모**: Streamlit AppTest로 업로드 전·정상·cp949·컬럼 누락·빈 파일 시나리오 실행 → 예외 0건, 같은 파일 Rerun 시 파이프라인 호출 1회(재연산 방지) 확인. 이후 브라우저 수동 검증(아래) 수행. Rerun 모델에서는 "언제 다시 계산되는가"를 session_state로 직접 통제해야 함을 확인함.
 - **브라우저 수동 검증 결과 (`streamlit run app.py`)**:
   - ⓪ 업로드 전 — 관찰: 업로더 아래 파란색 `st.info` "결제 내역 CSV 파일을 업로드하면 SaaS 비용 진단이 시작됩니다."만 표시되고 이후 영역은 렌더링되지 않음(`st.stop()` 가드 정상 동작).
-    ![업로드 전](screenshots/week11/00_before_upload.png)
+    ![업로드 전](screenshots/week11/chaseyeon/00_before_upload.png)
   - ① test_normal.csv — 관찰: 초록색 `st.success` "업로드 완료 · 검토 완료 — 유효 결제 내역 80건 (정제 중 제외·보정 50건)" 표시, 에러 없음.
-    ![정상 CSV](screenshots/week11/01_normal.png)
+    ![정상 CSV](screenshots/week11/chaseyeon/01_normal.png)
   - ② test_cp949.csv — 관찰: 인코딩 에러 없이 정상 파일과 동일하게 80건 / 제외·보정 50건 표시. cp949 재시도와 전각 `￦` 정제 수정이 함께 반영되었음을 확인(수정 전에는 77건).
-    ![cp949 CSV](screenshots/week11/02_cp949.png)
+    ![cp949 CSV](screenshots/week11/chaseyeon/02_cp949.png)
   - ③ test_missing_col.csv — 관찰: 스택트레이스 없이 빨간색 `st.error` "CSV 파일을 처리할 수 없습니다. 필수 컬럼과 형식을 확인해 주세요. / 상세: 필수 열 누락: billing_amount_krw" 표시, 이후 영역 중단.
-    ![컬럼 누락 CSV](screenshots/week11/03_1_missing_col.png)
+    ![컬럼 누락 CSV](screenshots/week11/chaseyeon/03_1_missing_col.png)
   - (+) test_missing_2cols.csv — 관찰: "상세: 필수 열 누락: seat_count, billing_amount_krw"로 누락 컬럼 2개가 모두 표시됨.
-    ![컬럼 2개 누락 CSV](screenshots/week11/03_2_missing_2cols.png)
+    ![컬럼 2개 누락 CSV](screenshots/week11/chaseyeon/03_2_missing_2cols.png)
 
 ## [2026-11-15] clean_billing_csv() 필수 열 누락 메시지 전체 표시 (담당: 차세연)
 - **대상 모듈**: data_processing.py, test_data/ / **관련 커밋**: 590c51b -> 3a3264d -> f0900f7
