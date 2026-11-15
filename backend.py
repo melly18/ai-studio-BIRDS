@@ -82,7 +82,7 @@ def run_audit_from_df(
 
     # 1. PII 마스킹 및 데이터 정제 (표준 스키마 순서 준수)
     masked_raw_df = dp.mask_pii_data(raw_df)
-    cleaned_df = _call_with_supported_args(
+    cleaned_df, clean_warnings = _call_with_supported_args(
         dp.clean_billing_csv, masked_raw_df, catalog
     )
     masked_df = dp.mask_pii_data(cleaned_df)
@@ -129,6 +129,7 @@ def run_audit_from_df(
 
     return {
         "clean_df": masked_df,
+        "clean_warnings": clean_warnings,
         "seat_leakage": seat_leakage,
         "duplicate_tags": duplicate_tags,
         "llm_questions": llm_questions,
