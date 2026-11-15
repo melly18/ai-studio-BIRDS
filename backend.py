@@ -143,6 +143,8 @@ def run_audit_from_df(
     return {
         "clean_df": masked_df,
         "clean_warnings": clean_warnings,
+        "row_count": int(len(masked_df)),
+        "warning_count": len(clean_warnings),
         "seat_leakage": seat_leakage,
         "duplicate_tags": duplicate_tags,
         "llm_questions": llm_questions,

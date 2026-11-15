@@ -63,8 +63,8 @@ if st.session_state.uploaded_file_id != uploaded.file_id:
 result = st.session_state.audit_result
 st.success(
     f"✅ '{uploaded.name}' 업로드 완료 · 검토 완료 — "
-    f"유효 결제 내역 {len(result['clean_df']):,}건 "
-    f"(정제 중 제외·보정 {len(result['clean_warnings']):,}건)"
+    f"유효 결제 내역 {result['row_count']:,}건 "
+    f"(정제 중 제외·보정 {result['warning_count']:,}건)"
 )
 
 
