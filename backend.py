@@ -8,6 +8,7 @@ UI(app.py)와 데이터 가공 로직을 철저히 분리하기 위해,
 from __future__ import annotations
 
 import inspect
+from pathlib import Path
 from typing import Any, IO
 import pandas as pd
 
@@ -15,7 +16,8 @@ import data_processing as dp
 import quant_analysis as qa
 import llm_utils as llm
 
-DEFAULT_CATALOG_PATH = "saas_catalog_30_sample.json"
+# 실행 위치(cwd)와 무관하게 backend.py와 같은 폴더의 카탈로그를 사용
+DEFAULT_CATALOG_PATH = str(Path(__file__).parent / "saas_catalog_30_sample.json")
 
 
 def load_csv_with_fallback(uploaded_file: IO[bytes]) -> pd.DataFrame:
