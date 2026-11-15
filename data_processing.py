@@ -348,6 +348,7 @@ def clean_billing_csv(df: pd.DataFrame, catalog: dict[str, Any]) -> tuple[pd.Dat
     work["billing_amount_krw"] = work["billing_amount_krw"].str.replace(",", "", regex=False)
     work["billing_amount_krw"] = work["billing_amount_krw"].str.replace("원", "", regex=False)
     work["billing_amount_krw"] = work["billing_amount_krw"].str.replace("₩", "", regex=False)
+    work["billing_amount_krw"] = work["billing_amount_krw"].str.replace("￦", "", regex=False)
     work["billing_amount_krw"] = pd.to_numeric(work["billing_amount_krw"], errors="coerce")
     for idx, row in work.iterrows():
         raw_amount = row["billing_amount_krw"]
