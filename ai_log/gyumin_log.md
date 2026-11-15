@@ -32,3 +32,13 @@
 2. [상태 관리 오류] 초기화 관용구(`if "키" not in st.session_state:`) 누락으로, 사이드바 필터를 조작할 때마다 전체 스크립트가 Rerun 되며 이전 분석 결과가 날아가는 버그 확인.
 * **수정 보완 내역**: UI 내부의 pandas 연산을 완전히 제거하고 `backend.py`(파사드 헬퍼 모듈)를 신설해 로직을 위임함. `app.py` 최상단에 `if "audit_result" not in st.session_state:` 조건문을 적용하여 상태가 보존되도록 리팩터링함.
 * **검증 및 판단 메모**: 기존 백엔드 `pytest` 46건 통과 확인 및 `streamlit run app.py` 브라우저 정상 렌더링 검증 후 커밋 완료. Streamlit 특유의 Rerun 모델에서는 AI에게 UI 생성을 맡길 때 상태 보존(`session_state`) 여부를 반드시 의심하고 통제해야 함을 확인함.
+
+## [2026-11-15] backend.py 내 AI 환각(존재하지 않는 함수) 호출 수정 및 직렬화 어댑터 적용 (담당: 강규민)
+- **대상 모듈**: `backend.py` / **관련 커밋**: `7cf9c2f` -> `75d73d5`
+- **초기 프롬프트(요지)**: `backend.py`의 `run_audit_from_df()` 내부에서 10주차에 구현한 `llm_utils.py`를 호출하여 역질문(`llm_questions`)과 최종 리포트(`llm_report`) 결과를 반환하도록 연결하라.
+- **AI 생성 결과(요지)**: `if hasattr(llm, "generate_Clarifying_questions"):` 조건문과 함께 존재하지 않는 `llm.generate_Clarifying_questions()` 함수를 호출하는 코드를 생성함.
+- **발견한 문제(취약점·오류·품질)**:
+  1. [존재하지 않는 함수 환각 및 침묵하는 실패] AI가 `llm_utils.py`의 실제 시그니처를 확인하지 않고 가상의 함수(`generate_Clarifying_questions`)를 생성했으며, 이를 `hasattr()` 조건문으로 감싸두어 런타임 에러(`AttributeError`)조차 나지 않고 빈 딕셔너리(`{}`)만 반환하는 구조가 됨. 초안 작성 시 AI 출력에 의존해 해당 부분을 미처 걸러내지 못했으나, 팀원과의 코드 리뷰 과정에서 실제 모듈 명세와 대조하며 뒤늦게 결함을 발견함.
+  2. [JSON 직렬화 충돌 위험] `detect_duplicate_tags()` 결과에 포함된 `set` 타입을 그대로 `build_prompt_template()`에 넘기면 `TypeError`가 발생할 위험 확인.
+- **수정 보완 내역**: `hasattr()` 및 가상 함수 호출을 제거하고, `llm_utils.py`의 실제 3단계 함수(`build_prompt_template` -> `call_llm_request` -> `parse_and_validate_json`)와 DTO 스키마(`QuestionBatch`, `FinalReport`)를 명시적으로 호출하도록 수정함. 또한 `_to_json_safe()` 재귀 어댑터를 추가해 `set`을 정렬된 `list`로 변환 후 전달하도록 보완함.
+- **검증 및 판단 메모**: `pytest` 전체 통과(`46 passed, 1 skipped`) 확인 후 `fix:` 커밋 완료. AI가 생성한 연동 코드에서 `hasattr` 같은 방어 구문이 오히려 AI 환각(존재하지 않는 함수 호출)을 숨겨 테스트를 통과시킬 수 있음을 체감했으며, AI 생성 코드일수록 실제 모듈의 함수명과 입출력 계약을 직접 교차 검증해야 함을 배움.
