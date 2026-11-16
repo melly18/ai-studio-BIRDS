@@ -209,14 +209,25 @@ def filter_and_summarize(
 
 
 def get_chart_data(filtered_df: pd.DataFrame) -> pd.DataFrame:
-    """st.bar_chart 시각화를 위해 서비스별 구독 비용 집계 DataFrame 반환."""
+    """st.bar_chart 시각화를 위해 서비스별 구독 비용과 낭비 금액 집계 DataFrame 반환."""
     if filtered_df.empty:
-        return pd.DataFrame(columns=["서비스명", "월간 구독 비용(원)"])
+        return pd.DataFrame(columns=["서비스명", "월간 구독 비용(원)", "월간 추정 낭비 금액(원)"])
+    
+    calculated_df = filtered_df.assign(
+        wasted_spend=(
+            filtered_df[COST_COL]
+            * (filtered_df["seat_count"] - filtered_df["active_users"])
+            / filtered_df["seat_count"]
+        ).round().astype(int)
+    )
 
     chart_df = (
-        filtered_df.groupby(SERVICE_COL, as_index=False)[COST_COL]
+        calculated_df.groupby(SERVICE_COL, as_index=False)[[COST_COL, "wasted_spend"]]
         .sum()
-        .rename(columns={SERVICE_COL: "서비스명", COST_COL: "월간 구독 비용(원)"})
+        .rename(columns={
+            SERVICE_COL: "서비스명", COST_COL: "월간 구독 비용(원)",
+            "wasted_spend": "월간 추정 낭비 금액(원)"})
         .sort_values(by="월간 구독 비용(원)", ascending=False)
+        .sort_values(by="월간 추정 낭비 금액(원)", ascending=False)
     )
     return chart_df
