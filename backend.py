@@ -231,3 +231,27 @@ def get_chart_data(filtered_df: pd.DataFrame) -> pd.DataFrame:
         .sort_values(by="월간 추정 낭비 금액(원)", ascending=False)
     )
     return chart_df
+
+def get_duplicate_table(
+        filtered_df: pd.DataFrame,
+        catalog_path: str = DEFAULT_CATALOG_PATH
+        ) -> pd.DataFrame:
+    """선택된 필터에 대한 중복 의심 태그를 DataFrame으로 반환."""
+    catalog = dp.load_saas_catalog(catalog_path)
+    duplicate_tags = _call_with_supported_args(
+            qa.detect_duplicate_tags, filtered_df, catalog
+        )
+    if not duplicate_tags:
+        return pd.DataFrame(columns=["서비스명1", "서비스명2", "중복 기능"])
+    
+    formatted_data = []
+    for item in duplicate_tags:
+        service1, service2 = item["tools"]
+        common_tags = item.get("common_tags", [])
+        formatted_data.append({
+            "서비스명1": service1,
+            "서비스명2": service2,
+            "중복 기능": ", ".join(common_tags) if common_tags else "없음"
+        })
+    
+    return pd.DataFrame(formatted_data)
