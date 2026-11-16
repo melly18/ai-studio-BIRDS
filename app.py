@@ -127,34 +127,45 @@ with chart_tab:
     if chart_data.empty:
         st.info("선택한 필터에 해당하는 차트 데이터가 없습니다.")
     else:
+        if len(chart_data) > 10:
+            show_all = st.toggle(f"전체 {len(chart_data)}개 서비스 모두 보기", value=False)
+            display_data = chart_data if show_all else chart_data.head(10)
+        else:
+            display_data = chart_data
+
         st.bar_chart(
-            chart_data,
-            x="서비스명",
-            y="월간 구독 비용(원)",
-        )
+                    display_data,
+                    x="서비스명",
+                    y=["월간 구독 비용(원)", "월간 추정 낭비 금액(원)"],
+                    y_label="금액(원)",
+                    color=["blue", "red"],
+                    horizontal=True,
+                    sort=False,
+                    stack=False,
+                )
 
 with detail_tab:
-    st.subheader("정제된 결제 내역")
-    st.dataframe(filtered_df, use_container_width=True)
+    st.subheader("전체 결제 내역")
+    st.caption("모든 결제 내역에 대한 월별 지출액 항목(monthly_cost_krw)이 추가되었습니다.")
+    if filtered_df.empty:
+        st.info("선택한 필터에 해당하는 결제 내역이 없습니다.")
+    else:
+        st.dataframe(filtered_df, use_container_width=True)
 
-    with st.expander("중복 의심 태그 보기"):
-        duplicate_tags = result["duplicate_tags"]
-        if duplicate_tags:
-            st.write(duplicate_tags)
+    duplicate_tags = backend.get_duplicate_table(filtered_df)
+    with st.expander(f"기능 중복 의심 {len(duplicate_tags)}건"):
+        if duplicate_tags.empty:
+            st.info("현재 이용 중인 서비스 간 기능 중복이 없습니다.")
         else:
-            st.info("중복 의심 태그가 없습니다.")
+            st.dataframe(duplicate_tags, use_container_width=True)
 
-    with st.expander("추가 진단을 위한 LLM 역질문"):
+    with st.expander("상세 진단을 위한 AI 어시스턴트"):
         questions = result["llm_questions"]["questions"]
         if questions:
             for question in questions:
                 st.markdown(f"**{question['question']}**")
-                st.caption(
-                    f"분류: {question['category']} · "
-                    f"필수도: {question['priority']}"
-                )
         else:
-            st.info("현재 표시할 역질문이 없습니다.")
+            st.info("현재 질문드릴 사항이 없습니다.")
 
-        if st.button("진단하러 가기", key="go_to_diagnosis"):
+        if st.button("진단하러 가기"):
             st.info("LLM 챗봇 UI는 다음 작업에서 연결됩니다.")
