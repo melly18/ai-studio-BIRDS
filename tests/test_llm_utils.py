@@ -1,8 +1,8 @@
 import pytest
 import json
 
-from llm_utils import build_prompt_template
-from llm_utils import parse_and_validate_json, QuestionBatch, CompanyContext, SlotValue
+from core.llm_utils import build_prompt_template
+from core.llm_utils import parse_and_validate_json, QuestionBatch, CompanyContext, SlotValue
 
 
 def test_build_prompt_template_normal():

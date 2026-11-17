@@ -10,14 +10,15 @@ import json
 from typing import Any
 
 import pandas as pd
+from pathlib import Path
 
-from data_processing import (
+from core.data_processing import (
     clean_billing_csv,
     load_billing_csv,
     load_saas_catalog,
     mask_pii_data,
 )
-from llm_utils import (
+from core.llm_utils import (
     ConversationState,
     FinalReport,
     QuestionBatch,
@@ -26,15 +27,17 @@ from llm_utils import (
     call_llm_request,
     parse_and_validate_json,
 )
-from quant_analysis import (
+from core.quant_analysis import (
     SeatLeakage,
     calculate_seat_leakage,
     detect_duplicate_tags,
 )
 
+ROOT_DIR = Path(__file__).resolve().parent.parent
+DATA_DIR = ROOT_DIR / "data"
 # 기본 샘플 데이터 경로 상수
-DEFAULT_BILLING_CSV_PATH: str = "payment_history_raw_100_sample.csv"
-DEFAULT_CATALOG_JSON_PATH: str = "saas_catalog_30_sample.json"
+DEFAULT_BILLING_CSV_PATH: str = DATA_DIR / "payment_history_raw_100_sample.csv"
+DEFAULT_CATALOG_JSON_PATH: str = DATA_DIR / "saas_catalog_30_sample.json"
 
 
 def adapt_duplicate_pairs_for_json(

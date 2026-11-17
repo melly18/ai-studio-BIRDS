@@ -5,7 +5,7 @@ import pandas as pd
 calculate_seat_leakage 함수에 대한 단위 테스트를 수행한다.
 정상 1건, 경계 1건, 예외 1건을 테스트한다.
 """
-from quant_analysis import SeatLeakage, calculate_seat_leakage
+from core.quant_analysis import SeatLeakage, calculate_seat_leakage
 
 def test_calculate_leakage_normal():   #정상 케이스 테스트
     clean_df = pd.DataFrame([
@@ -96,7 +96,7 @@ def test_calculate_leakage_excess_users():   #예외 케이스 테스트: 유휴
 calculate_seat_leakage 함수에 대한 단위 테스트를 수행한다.
 정상 2건, 경계 1건, 예외 2건을 테스트한다.
 """
-from quant_analysis import detect_duplicate_tags
+from core.quant_analysis import detect_duplicate_tags
 
 
 def test_detect_duplicate_tags_case_1():

@@ -4,7 +4,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from data_processing import clean_billing_csv
+from core.data_processing import clean_billing_csv
 
 
 CATALOG = {

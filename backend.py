@@ -12,12 +12,14 @@ from pathlib import Path
 from typing import Any, IO
 import pandas as pd
 
-import data_processing as dp
-import quant_analysis as qa
-import llm_utils as llm
+import core.data_processing as dp
+import core.quant_analysis as qa
+import core.llm_utils as llm
 
-# 실행 위치(cwd)와 무관하게 backend.py와 같은 폴더의 카탈로그를 사용
-DEFAULT_CATALOG_PATH = str(Path(__file__).parent / "saas_catalog_30_sample.json")
+# 실행 위치(cwd)와 무관하게 data 폴더의 카탈로그를 사용
+ROOT_DIR = Path(__file__).resolve().parent
+DATA_DIR = ROOT_DIR / "data"
+DEFAULT_CATALOG_PATH = str(DATA_DIR / "saas_catalog_30_sample.json")
 
 # 정제 스키마(data_processing.CLEAN_OUTPUT_COLUMNS) 기준 컬럼명
 COST_COL = "monthly_cost_krw"

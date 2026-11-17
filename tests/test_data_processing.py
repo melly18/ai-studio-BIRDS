@@ -1,11 +1,12 @@
 from pathlib import Path
 import pytest
 import pandas as pd
-from data_processing import load_billing_csv, load_saas_catalog, mask_pii_data
+from core.data_processing import load_billing_csv, load_saas_catalog, mask_pii_data
 
-HERE = Path(__file__).parent
-BILLING_SAMPLE = HERE / "payment_history_raw_100_sample.csv"
-CATALOG_SAMPLE = HERE / "saas_catalog_30_sample.json"
+ROOT_DIR = Path(__file__).resolve().parent.parent
+DATA_DIR = ROOT_DIR / "data"
+BILLING_SAMPLE = DATA_DIR / "payment_history_raw_100_sample.csv"
+CATALOG_SAMPLE = DATA_DIR / "saas_catalog_30_sample.json"
 
 BILLING_COLUMNS = [
     "tx_id",

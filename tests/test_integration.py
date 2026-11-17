@@ -6,8 +6,8 @@ pipeline.py 함수에 대한 단위 테스트를 수행한다.
 정상 1건, 경계 1건, 예외 1건을 테스트한다.
 """
 
-from pipeline import adapt_duplicate_pairs_for_json, summarize_analysis_for_llm, run_pipeline_from_data
-from quant_analysis import SeatLeakage
+from core.pipeline import adapt_duplicate_pairs_for_json, summarize_analysis_for_llm, run_pipeline_from_data
+from core.quant_analysis import SeatLeakage
 
 def test_adapt_duplicate_pairs_for_json_case_1():
     raw_pairs = [

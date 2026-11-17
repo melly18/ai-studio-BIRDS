@@ -2,7 +2,7 @@ import json
 import re
 from typing import Any, Literal, TypedDict, TypeVar, cast, get_args, get_origin, get_type_hints, is_typeddict
 
-from prompts.template import(
+from core.template import(
     _PURPOSES,
     _COMMON_INSTRUCTIONS,
     _QUESTION_INSTRUCTIONS,
@@ -10,7 +10,7 @@ from prompts.template import(
     _REPORT_INSTRUCTIONS,
 )
 
-from docs.schema import(
+from core.schema import(
     SlotValue,
     QuestionItem,
     QuestionBatch,
