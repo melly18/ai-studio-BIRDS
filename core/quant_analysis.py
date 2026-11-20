@@ -1,3 +1,4 @@
+from itertools import combinations
 from typing import TypedDict
 
 import pandas as pd
@@ -11,7 +12,11 @@ class SeatLeakage(TypedDict):
     wasted_spend: int   #낭비 금액
 
 
-DuplicatePair = list[str]
+class DuplicatePair(TypedDict):
+    """공통 카테고리 태그를 가진 두 SaaS와 공통 태그 집합."""
+
+    tools: set[str]
+    common_tags: set[str]
 
 
 def calculate_seat_leakage(clean_df: pd.DataFrame) -> list[SeatLeakage]:
@@ -82,19 +87,33 @@ def calculate_seat_leakage(clean_df: pd.DataFrame) -> list[SeatLeakage]:
     return leakage_report.to_dict("records")
 
 
+def _extract_string_list(raw_value: object) -> list[str]:
+    """문자열 또는 시퀀스에서 유효한 문자열 목록을 중복 없이 추출한다."""
+    if isinstance(raw_value, str):
+        raw_value = [raw_value]
+    if not isinstance(raw_value, (list, tuple, set)):
+        return []
+    return list(
+        dict.fromkeys(
+            item for item in raw_value if isinstance(item, str) and item.strip()
+        )
+    )
+
+
 def detect_duplicate_tags(clean_df: pd.DataFrame, catalog: dict) -> list[DuplicatePair]:
     """사용 중인 SaaS 중 공통 카테고리 태그를 가진 쌍을 찾는다.
 
     ``clean_df``에서는 ``service_name``만 사용하며, 서비스명 또는 카탈로그의
     별칭으로 카탈로그 항목을 식별한다. 결과의 서비스명은 카탈로그의
-    ``service_name``이고, 공통 태그는 카탈로그에 정의된 순서를 따른다.
+    ``service_name``이다.
 
     Args:
         clean_df: ``service_name`` 컬럼을 포함하는 정제된 결제 데이터프레임.
         catalog: ``tools`` 키에 SaaS 카탈로그 목록을 담은 딕셔너리.
 
     Returns:
-        ``[서비스명1, 서비스명2, 공통태그...]`` 형식의 중복 서비스 쌍 목록.
+        ``{"tools": {서비스명1, 서비스명2}, "common_tags": {공통태그...}}`` 형식의
+        ``DuplicatePair`` 리스트.
         공통 태그가 없거나 입력 데이터 또는 카탈로그가 비어 있으면 빈 목록을
         반환한다.
 
@@ -118,8 +137,8 @@ def detect_duplicate_tags(clean_df: pd.DataFrame, catalog: dict) -> list[Duplica
         if isinstance(value, str) and value.strip()
     }
 
-    matched_catalog = []
-    seen_service_names = set()
+    matched_catalog: list[tuple[str, set[str]]] = []
+    seen_service_names: set[str] = set()
     for item in catalog_tools:
         if not isinstance(item, dict):
             continue
@@ -130,42 +149,26 @@ def detect_duplicate_tags(clean_df: pd.DataFrame, catalog: dict) -> list[Duplica
 
         canonical_name = service_name.strip()
         canonical_key = canonical_name.casefold()
-        aliases = item.get("aliases", [])
-        if isinstance(aliases, str):
-            aliases = [aliases]
-        if not isinstance(aliases, (list, tuple, set)):
-            aliases = []
-
-        names = {canonical_key}
-        names.update(
-            alias.strip().casefold()
-            for alias in aliases
-            if isinstance(alias, str) and alias.strip()
-        )
-        if used_names.isdisjoint(names) or canonical_key in seen_service_names:
+        if canonical_key in seen_service_names:
             continue
 
-        tags = item.get("category_tags", [])
-        if isinstance(tags, str):
-            tags = [tags]
-        if not isinstance(tags, (list, tuple, set)):
-            tags = []
-        normalized_tags = []
-        for tag in tags:
-            if isinstance(tag, str) and tag not in normalized_tags:
-                normalized_tags.append(tag)
-        normalized_tags = set(normalized_tags)
+        aliases = _extract_string_list(item.get("aliases", []))
+        names = {canonical_key, *(alias.strip().casefold() for alias in aliases)}
+        if used_names.isdisjoint(names):
+            continue
+
+        normalized_tags = set(_extract_string_list(item.get("category_tags", [])))
         matched_catalog.append((canonical_name, normalized_tags))
         seen_service_names.add(canonical_key)
 
-    duplicate_pairs = []
-    for index, (first_name, first_tags) in enumerate(matched_catalog):
-        for second_name, second_tags in matched_catalog[index + 1:]:
-            common_tags = {
-                tag for tag in first_tags
-                if tag in second_tags
-            }
-            if common_tags:
-                duplicate_pairs.append({"tools": {first_name, second_name}, "common_tags": common_tags})
+    duplicate_pairs: list[DuplicatePair] = []
+    for (first_name, first_tags), (second_name, second_tags) in combinations(
+        matched_catalog, 2
+    ):
+        common_tags = first_tags & second_tags
+        if common_tags:
+            duplicate_pairs.append(
+                {"tools": {first_name, second_name}, "common_tags": common_tags}
+            )
 
     return duplicate_pairs
