@@ -110,6 +110,4 @@ streamlit run app.py
 
 | 번호 | 리뷰 대상 모듈 | 수신한 리뷰 코멘트 요지 | 수용/보류 판단 및 사유 | 반영 내역 및 관련 커밋 |
 | --- | --- | --- | --- | --- |
-| 2 | `core/quant_analysis.py` | *1) `detect_duplicate_tags` 반환 스키마·docstring 불일치, 2) `set` 변환으로 태그 순서 유실, 3) 3중 중첩 반복문/조건문 분리 필요* 
-| **부분 수용 (1·3번 수용, 2번 보류)** — `pipeline.py`·`backend.py` 및 테스트와의 호환성을 위해 `dict/set` 반환 구조는 유지하되, `DuplicatePair` `TypedDict`·docstring 동기화 및 `_extract_string_list`·`itertools.combinations` 리팩터링 적용 (태그 순서는 현 `set` 구조 유지로 보류) 
-| *커밋 해시: 000cff9* |
+| 2 | `core/quant_analysis.py` | *1) 반환 스키마·docstring 불일치, 2) 태그 순서 유실, 3) 3중 중첩 완화* | **부분 수용 (1·3번 수용, 2번 보류)** — 1·3번 반영(`TypedDict`·docstring 동기화 및 `combinations` 리팩터링). 2번은 현 `dict/set` 구조 호환성 유지를 위해 보류 | *커밋 해시: 000cff9* |
