@@ -110,5 +110,6 @@ streamlit run app.py
 
 | 번호 | 리뷰 대상 모듈 | 수신한 리뷰 코멘트 요지 | 수용/보류 판단 및 사유 | 반영 내역 및 관련 커밋 |
 | --- | --- | --- | --- | --- |
-| 1 | `data_processing.py` / `quant_analysis.py` | *pandas 3.1에서 `work.at[...]`로 없는 열에 값 설정, `drop(inplace=True)` 사용 시 Pandas4Warning 발생 → `.loc`와 `work = work.drop(idx)`로 변경 제안* | **보류 (기존 동작 유지)** — 향후 pandas 버전에서 에러가 발생할 예정이나, 샘플 데이터 테스트 결과 현 버전에서 산출물(80행·경고 50건)이 완전히 동일함을 확인하여 설계 변경 보류 | *커밋 해시: 250a947* |
-| 2 | `data_processing.py` / `llm_utils.py` | *코드 리뷰 코멘트 미수신 (페어링 팀의 리뷰 미도착으로 인한 보류)* | **보류** — 상동 | - |
+| 2 | `core/quant_analysis.py` | *1) `detect_duplicate_tags` 반환 스키마·docstring 불일치, 2) `set` 변환으로 태그 순서 유실, 3) 3중 중첩 반복문/조건문 분리 필요* 
+| **부분 수용 (1·3번 수용, 2번 보류)** — `pipeline.py`·`backend.py` 및 테스트와의 호환성을 위해 `dict/set` 반환 구조는 유지하되, `DuplicatePair` `TypedDict`·docstring 동기화 및 `_extract_string_list`·`itertools.combinations` 리팩터링 적용 (태그 순서는 현 `set` 구조 유지로 보류) 
+| *커밋 해시: 000cff9* |
