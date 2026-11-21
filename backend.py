@@ -26,14 +26,16 @@ COST_COL = "monthly_cost_krw"
 SERVICE_COL = "service_name"
 
 
-def load_csv_with_fallback(uploaded_file: IO[bytes]) -> pd.DataFrame:
-    """업로드된 CSV 파일 객체를 읽어 DataFrame으로 반환 (cp949 재시도 포함).
+def load_csv_with_encoding(uploaded_file: IO[bytes]) -> tuple[pd.DataFrame, str]:
+    """업로드된 CSV 파일 객체를 읽어 (DataFrame, 실제 사용된 인코딩)을 반환.
+
+    UTF-8(BOM 포함)로 먼저 읽고, 실패하면 cp949로 재시도한다.
 
     Args:
         uploaded_file: st.file_uploader가 반환한 UploadedFile 객체.
 
     Returns:
-        로드된 원본 pandas DataFrame.
+        (로드된 원본 pandas DataFrame, "utf-8" 또는 "cp949").
 
     Raises:
         ValueError: 파일이 비어 있거나 CSV 파싱에 실패한 경우.
@@ -42,16 +44,27 @@ def load_csv_with_fallback(uploaded_file: IO[bytes]) -> pd.DataFrame:
     read_kwargs = {"dtype": str, "keep_default_na": False}
     try:
         try:
-            return pd.read_csv(uploaded_file, encoding="utf-8", **read_kwargs)
+            return pd.read_csv(uploaded_file, encoding="utf-8", **read_kwargs), "utf-8"
         except UnicodeDecodeError:
             uploaded_file.seek(0)  # 파일 포인터를 처음으로 되돌린 뒤 재시도
-            return pd.read_csv(uploaded_file, encoding="cp949", **read_kwargs)
+            return pd.read_csv(uploaded_file, encoding="cp949", **read_kwargs), "cp949"
     except (
         UnicodeDecodeError,
         pd.errors.EmptyDataError,
         pd.errors.ParserError,
     ) as exc:
         raise ValueError(f"CSV 파일을 읽을 수 없습니다: {exc}") from exc
+
+
+def load_csv_with_fallback(uploaded_file: IO[bytes]) -> pd.DataFrame:
+    """업로드된 CSV 파일 객체를 읽어 DataFrame으로 반환 (cp949 재시도 포함).
+
+    하위 호환용 래퍼. 인코딩 정보가 필요하면 load_csv_with_encoding()을 사용한다.
+
+    Raises:
+        ValueError: 파일이 비어 있거나 CSV 파싱에 실패한 경우.
+    """
+    return load_csv_with_encoding(uploaded_file)[0]
 
 
 # 업로드 전 안내용 필수 열 설명·예시 (열 목록 자체는 dp.CLEAN_REQUIRED_COLUMNS가 단일 기준)

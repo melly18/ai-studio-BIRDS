@@ -18,6 +18,10 @@ if "audit_result" not in st.session_state:
 if "uploaded_file_id" not in st.session_state:
     st.session_state.uploaded_file_id = None
 
+# 업로드 파일을 실제로 읽은 인코딩("utf-8"/"cp949"). 필터 Rerun 후에도 경고 유지용
+if "detected_encoding" not in st.session_state:
+    st.session_state.detected_encoding = None
+
 # 사이드바 필터 위젯(key)의 기본값. 파일 교체 시 이 값으로 되돌린다.
 FILTER_DEFAULTS = {"dept_filter": "전체", "cycle_filter": "전체"}
 for _key, _default in FILTER_DEFAULTS.items():
@@ -31,7 +35,7 @@ st.caption("스타트업 결제 내역 CSV를 업로드하면 부서별 SaaS 비
 # [TODO: UI B1 - 차세연 님 작업 구역]
 # 1. st.file_uploader로 CSV 업로드 받기
 # 2. uploaded is None 이면 st.info 안내 메시지 출력 후 st.stop() 호출
-# 3. 새로운 파일 업로드 시 backend.load_csv_with_fallback(uploaded) 및
+# 3. 새로운 파일 업로드 시 backend.load_csv_with_encoding(uploaded) 및
 #    backend.run_audit_from_df(raw_df)를 호출해 st.session_state.audit_result 에 저장
 # 4. 잘못된 CSV(ValueError, KeyError) 발생 시 st.error 안내 후 st.stop() 방어
 # =====================================================================
@@ -45,6 +49,7 @@ def reset_upload_state() -> None:
     """
     st.session_state.audit_result = None
     st.session_state.uploaded_file_id = None
+    st.session_state.detected_encoding = None
     for key, default in FILTER_DEFAULTS.items():
         st.session_state[key] = default
 
@@ -75,9 +80,10 @@ if st.session_state.uploaded_file_id != uploaded.file_id:
     reset_upload_state()  # 파일 교체 시 이전 결과·필터(dept/cycle)를 먼저 리셋
     try:
         with st.spinner("결제 내역을 분석하는 중입니다..."):
-            raw_df = backend.load_csv_with_fallback(uploaded)  # cp949 재시도 포함
+            raw_df, encoding = backend.load_csv_with_encoding(uploaded)  # cp949 재시도 포함
             st.session_state.audit_result = backend.run_audit_from_df(raw_df)
         st.session_state.uploaded_file_id = uploaded.file_id
+        st.session_state.detected_encoding = encoding
     except (ValueError, KeyError) as exc:
         reset_upload_state()
         st.error(f"CSV 파일을 처리할 수 없습니다. 필수 컬럼과 형식을 확인해 주세요.\n\n상세: {exc}")
@@ -89,6 +95,8 @@ if st.session_state.uploaded_file_id != uploaded.file_id:
 
 # 4. 결과 안내: 정상 업로드·검토 완료 표시 (Rerun 후에도 유지)
 result = st.session_state.audit_result
+if st.session_state.detected_encoding == "cp949":
+    st.warning("인코딩을 CP949로 감지하여 읽었습니다.")
 st.success(
     f"✅ '{uploaded.name}' 업로드 완료 · 검토 완료 — "
     f"유효 결제 내역 {result['row_count']:,}건 "
