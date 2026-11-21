@@ -54,6 +54,48 @@ def load_csv_with_fallback(uploaded_file: IO[bytes]) -> pd.DataFrame:
         raise ValueError(f"CSV 파일을 읽을 수 없습니다: {exc}") from exc
 
 
+# 업로드 전 안내용 필수 열 설명·예시 (열 목록 자체는 dp.CLEAN_REQUIRED_COLUMNS가 단일 기준)
+# 예시 PII는 반드시 가상 값만 사용 (배포 보안 3계명)
+_REQUIRED_COLUMN_GUIDE: dict[str, tuple[str, str]] = {
+    "tx_id": ("결제 거래 ID", "TX-0001"),
+    "billing_date": ("결제일 (YYYY-MM-DD)", "2026-10-01"),
+    "service_name": ("SaaS 서비스명", "Slack"),
+    "department": ("사용 부서", "마케팅"),
+    "billing_cycle": ("결제 주기 (월간/연간)", "월간"),
+    "seat_count": ("구매 좌석 수", "10"),
+    "active_users": ("실제 활성 사용자 수", "7"),
+    "billing_amount_krw": ("결제 금액 (원)", "385000"),
+    "card_holder_pii": (
+        "카드 소유자 정보 (업로드 후 자동 마스킹)",
+        "홍길동 / hong@example.com / 0000-0000-0000-0000",
+    ),
+}
+
+
+def get_required_columns_guide() -> pd.DataFrame:
+    """업로드 전 화면에 표시할 필수 열 안내 표(열 이름/설명/예시) 반환."""
+    rows = [
+        {
+            "열 이름": col,
+            "설명": _REQUIRED_COLUMN_GUIDE.get(col, ("", ""))[0],
+            "예시": _REQUIRED_COLUMN_GUIDE.get(col, ("", ""))[1],
+        }
+        for col in dp.CLEAN_REQUIRED_COLUMNS
+    ]
+    return pd.DataFrame(rows, columns=["열 이름", "설명", "예시"])
+
+
+def get_template_csv_bytes() -> bytes:
+    """필수 열 헤더 + 가상 예시 1행으로 구성된 템플릿 CSV 바이트 반환.
+
+    Excel에서 한글이 깨지지 않도록 UTF-8 BOM(utf-8-sig)으로 인코딩한다.
+    """
+    columns = list(dp.CLEAN_REQUIRED_COLUMNS)
+    example = {col: _REQUIRED_COLUMN_GUIDE.get(col, ("", ""))[1] for col in columns}
+    template_df = pd.DataFrame([example], columns=columns)
+    return template_df.to_csv(index=False).encode("utf-8-sig")
+
+
 def _call_with_supported_args(func: Any, *args: Any) -> Any:
     """모듈 함수의 파라미터 개수에 맞춰 안전하게 호출하는 내부 어댑터."""
     sig = inspect.signature(func)

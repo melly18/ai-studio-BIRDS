@@ -55,6 +55,19 @@ uploaded = st.file_uploader("결제 내역 CSV를 드래그 앤 드롭하세요"
 if uploaded is None:
     reset_upload_state()  # 파일을 지운 경우 이전 결과가 남지 않도록 리셋
     st.info("결제 내역 CSV 파일을 업로드하면 SaaS 비용 진단이 시작됩니다.")
+    with st.expander("📋 CSV 필수 열 9종 및 예시 형식", expanded=True):
+        st.dataframe(
+            backend.get_required_columns_guide(),
+            hide_index=True,
+            width="stretch",
+        )
+        st.caption("첫 행은 위 열 이름 헤더여야 하며, UTF-8 또는 CP949 인코딩을 지원합니다.")
+        st.download_button(
+            "⬇️ 템플릿 CSV 다운로드",
+            data=backend.get_template_csv_bytes(),
+            file_name="billing_template.csv",
+            mime="text/csv",
+        )
     st.stop()
 
 # 3. 처리: 새 파일일 때만 백엔드 파이프라인 실행 (필터 조작 등 Rerun 시 재연산 방지)
