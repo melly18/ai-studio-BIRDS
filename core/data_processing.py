@@ -17,6 +17,12 @@ TOOL_REQUIRED_KEYS = (  # 공급사 카탈로그 도구별 필수 키
     "category_tags",
     "pricing_tiers",
 )
+# 영문 부서 표기 → 표준 한글 부서명 (키는 casefold 기준). '~팀' 접미사는 normalize_department에서 제거한다.
+DEPARTMENT_ALIAS_MAP = {
+    "hr": "인사",
+    "data": "데이터",
+    "sales": "영업",
+}
 
 def load_billing_csv(file_path: str) -> pd.DataFrame:
     """결제 내역 CSV 파일을 원본 문자열 DataFrame으로 불러온다.
@@ -149,6 +155,14 @@ def _coerce_text(value: object) -> str:
     if pd.isna(value):
         return ""
     return str(value).strip()
+
+
+def normalize_department(raw_department: str) -> str:
+    """부서명을 표준 표기로 바꾼다. 공백 정리 → '~팀' 접미사 제거 → 영문 별칭 매핑 순서로 적용한다."""
+    department = _coerce_text(raw_department)
+    if len(department) > 1 and department.endswith("팀"):
+        department = department[:-1].strip()
+    return DEPARTMENT_ALIAS_MAP.get(department.casefold(), department)
 
 
 def _warning(tx_id: str, reason: str, action: str) -> dict:
@@ -300,7 +314,7 @@ def clean_billing_csv(df: pd.DataFrame, catalog: dict[str, Any]) -> tuple[pd.Dat
             warnings.append(_warning(work.at[idx, "tx_id"], "department 비어 있어 '미상'으로 보정", "보정"))
             work.at[idx, "department"] = "미상"
         else:
-            work.at[idx, "department"] = raw_department
+            work.at[idx, "department"] = normalize_department(raw_department)
 
     # 5. billing_cycle
     for idx, row in work.iterrows():

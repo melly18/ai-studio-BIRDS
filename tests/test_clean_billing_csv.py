@@ -205,3 +205,40 @@ def test_t07_empty_df_missing_column_raises():
 
     with pytest.raises(ValueError, match="필수 열 누락"):
         clean_billing_csv(df, CATALOG)
+
+
+def _department_df(departments):
+    n = len(departments)
+    return pd.DataFrame(
+        {
+            "tx_id": [f"TX-D{i}" for i in range(n)],
+            "billing_date": ["2026-10-05"] * n,
+            "service_name": ["Figma"] * n,
+            "department": departments,
+            "billing_cycle": ["월간"] * n,
+            "seat_count": ["5"] * n,
+            "active_users": ["5"] * n,
+            "billing_amount_krw": ["100000"] * n,
+            "card_holder_pii": ["더미"] * n,
+        },
+        dtype=str,
+    )
+
+
+def test_t08_department_variants_are_unified():
+    """정상: 영문 별칭, ~팀 접미사, 앞뒤 공백 표기를 하나의 표준 부서명으로 통일한다."""
+    df = _department_df(["HR", "Data", "sales", "개발 ", "", "기획팀", "경영지원팀"])
+
+    result, _ = clean_billing_csv(df, CATALOG)
+
+    assert result["department"].tolist() == ["인사", "데이터", "영업", "개발", "미상", "기획", "경영지원"]
+
+
+def test_t09_department_variants_are_summed_together():
+    """정상: 표기만 다른 같은 부서의 결제가 하나로 합산되어 누락되지 않는다."""
+    df = _department_df(["Data", "데이터", "HR", "인사", "인사팀"])
+
+    result, _ = clean_billing_csv(df, CATALOG)
+    totals = result.groupby("department")["monthly_cost_krw"].sum().to_dict()
+
+    assert totals == {"데이터": 200000, "인사": 300000}
