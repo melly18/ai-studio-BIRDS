@@ -18,6 +18,12 @@ if "audit_result" not in st.session_state:
 if "uploaded_file_id" not in st.session_state:
     st.session_state.uploaded_file_id = None
 
+# 사이드바 필터 위젯(key)의 기본값. 파일 교체 시 이 값으로 되돌린다.
+FILTER_DEFAULTS = {"dept_filter": "전체", "cycle_filter": "전체"}
+for _key, _default in FILTER_DEFAULTS.items():
+    if _key not in st.session_state:
+        st.session_state[_key] = _default
+
 st.title("🦅 BIRDS SaaS 비용 누수 & 중복 구독 진단 대시보드")
 st.caption("스타트업 결제 내역 CSV를 업로드하면 부서별 SaaS 비용 누수와 중복 도구를 즉시 진단합니다.")
 
@@ -34,10 +40,13 @@ def reset_upload_state() -> None:
     """업로드 상태 리셋 (3단계 프로토콜의 '쓰기').
 
     최초 1회 초기화는 상단 `if "키" not in st.session_state:` 블록이 담당하고,
-    이 함수는 파일 제거·처리 실패 이벤트 시 이전 결과를 비우는 용도다.
+    이 함수는 파일 교체·제거·처리 실패 이벤트 시 이전 결과와 필터 선택을 비우는 용도다.
+    반드시 사이드바 selectbox 생성 전에 호출해야 한다(위젯 생성 후 key 변경 시 예외).
     """
     st.session_state.audit_result = None
     st.session_state.uploaded_file_id = None
+    for key, default in FILTER_DEFAULTS.items():
+        st.session_state[key] = default
 
 # 1. 입력: 파일 업로드
 uploaded = st.file_uploader("결제 내역 CSV를 드래그 앤 드롭하세요", type="csv")
@@ -50,6 +59,7 @@ if uploaded is None:
 
 # 3. 처리: 새 파일일 때만 백엔드 파이프라인 실행 (필터 조작 등 Rerun 시 재연산 방지)
 if st.session_state.uploaded_file_id != uploaded.file_id:
+    reset_upload_state()  # 파일 교체 시 이전 결과·필터(dept/cycle)를 먼저 리셋
     try:
         with st.spinner("결제 내역을 분석하는 중입니다..."):
             raw_df = backend.load_csv_with_fallback(uploaded)  # cp949 재시도 포함
