@@ -74,3 +74,50 @@
 - **발견한 문제(취약점·오류·품질)**: 두 건 모두 동작 오류는 아니지만, 강의록 평가 체크 포인트(UI와 백엔드의 분리, session_state 초기화 관용구) 관점에서 의도가 코드에 드러나지 않는 품질 문제. 특히 ②는 실제로는 3단계 프로토콜(초기화 → 읽기 → 쓰기)의 '쓰기'(이벤트 시 리셋)인데 주석이 '초기화'라고 되어 있어 오해를 키움.
 - **수정 보완 내역**: ① `run_audit_from_df()` 반환값에 `row_count`, `warning_count`를 추가하고 app.py는 값만 읽도록 변경. ② 리셋 대입을 `reset_upload_state()` 함수로 묶고 docstring에 "초기화가 아닌 쓰기"임을 명시해 3곳에서 호출. 수정 전/후 구조를 비교 검토한 뒤 중복 제거·의도 표현·키 추가 시 변경 지점 단일화 측면에서 수정 후 구조를 채택함.
 - **검증 및 판단 메모**: AppTest 시나리오 전체 결과가 리팩터링 전과 동일(80건/제외·보정 50건, 에러 안내, Rerun 시 파이프라인 1회), `pytest` 46 passed, 1 skipped. 동작이 맞아도 설계 원칙과 의도가 코드에 드러나는지 별도로 점검해야 하며, 관용구 바깥의 상태 쓰기는 함수와 docstring으로 의도를 명시하는 것이 안전함을 확인함.
+
+---
+
+## [2026-11-21] app.py 파일 교체 시 이전 결과·필터 상태 잔존 버그 수정 (담당: 차세연)
+- **대상 모듈**: app.py / **관련 커밋**: 6dc597d -> 851fa62 (After 캡처: 2b969cb)
+- **초기 프롬프트(요지)**: 해당 버그의 원인이 무엇인지, 어떻게 해결할 수 있는지 먼저 알려줄 것. 수정안 확인 후 수정을 진행함.
+- **AI 생성 결과(요지)**: 원인은 `selectbox(key="dept_filter"/"cycle_filter")` 값이 session_state에 남는데, `reset_upload_state()`는 `audit_result`, `uploaded_file_id`만 비워 새 파일에도 이전 필터가 적용되는 것이라고 분석함. 수정안으로 `FILTER_DEFAULTS` 초기화 가드 추가, `reset_upload_state()`에서 필터 키도 `"전체"`로 리셋, `file_id` 변경 감지 시 분석 전에 리셋 호출을 제시함.
+- **발견한 문제(취약점·오류·품질)**:
+  1. [위젯 key 상태 잔존] key를 준 위젯은 Rerun은 물론 파일이 바뀌어도 값이 유지됨. 위젯 key도 Rerun에도 살아남는 상태이므로, 상위 데이터(파일)가 바뀔 때 함께 리셋할 목록에 포함해야 함.
+  2. [리셋 시점 제약] `selectbox` 생성 후에 key를 바꾸면 `StreamlitAPIException`이 발생함. 그래서 위젯 생성 전(새 파일 감지 직후)에 리셋해야 하며, 이렇게 하면 `st.rerun()` 없이 같은 실행에서 바로 최신 결과가 그려짐.
+  3. 사이드바 표시값("전체")과 실제 적용된 필터(이전 파일에서 고른 "인사")가 달라, 사용자는 숫자가 왜 틀렸는지 알아챌 수 없음.
+- **수정 보완 내역**: 초기화 가드에 `FILTER_DEFAULTS = {"dept_filter": "전체", "cycle_filter": "전체"}` 추가, `reset_upload_state()`에서 필터 키 리셋 및 docstring에 "selectbox 생성 전에 호출" 제약 명시, 새 파일 분기 첫 줄에서 `reset_upload_state()` 호출. 삭제 후 재업로드 경로(`uploaded is None`)도 같은 함수를 쓰므로 함께 해결됨.
+- **검증 및 판단 메모**: Streamlit AppTest로 수정 전과 후를 같은 시나리오로 비교함. `pytest` 46 passed, 1 skipped (skip 1건은 정답지 CSV 부재로 건너뛴 기존 샘플 대조 테스트).
+- **브라우저 수동 검증 결과**:
+  - Before ("인사" 필터 선택 후 파일 교체) — 관찰: 사이드바는 부서·결제 주기 모두 "전체"로 보이지만, KPI는 "인사" 필터가 그대로 적용된 총 월간 구독 비용 0원 / 유휴 좌석 5 / 낭비 금액 0원, 차트에는 Dropbox 1개만 표시됨.
+    ![Before 파일 교체](screenshots/week12/before_04_file_replace.png)
+  - After — 관찰: test_normal.csv로 교체 후 사이드바 "전체/전체", 성공 메시지 "유효 결제 내역 80건 (정제 중 제외·보정 50건)", KPI 총비용 28,747,450원 / 유휴 좌석 488 / 낭비 금액 12,424,935원, 차트 전체 25개 서비스로 새 파일 기준 결과가 정상 표시됨.
+    ![After 파일 교체](screenshots/week12/after_04_file_replace.png)
+
+## [2026-11-21] 업로드 전 CSV 필수 열 9종 안내 표·템플릿 다운로드 추가 (담당: 차세연)
+- **대상 모듈**: app.py, backend.py, tests/test_backend_guide.py / **관련 커밋**: 851fa62 -> 1c0a3f7 (After 캡처: 2b969cb)
+- **초기 프롬프트(요지)**: 데이터 업로드 전, CSV 필수 열 9종 안내 표 및 템플릿 다운로드를 추가하려 함. 이를 위한 수정 방향을 먼저 요청. 수정안 확인 후 수정을 진행함.
+- **AI 생성 결과(요지)**: `uploaded is None` 구간(`st.stop()` 직전)에 기본으로 펼쳐진 `st.expander`를 두고, 그 안에 열 이름·설명·예시 표, 헤더·인코딩 안내 캡션, `st.download_button`을 배치함. 백엔드에 `get_required_columns_guide()`(안내 표 DataFrame)와 `get_template_csv_bytes()`(헤더 + 가상 예시 1행, utf-8-sig)를 추가하고 테스트 4건을 작성함.
+- **발견한 문제(취약점·오류·품질)**:
+  1. 필수 열 목록을 app.py에 하드코딩하면 실제 검증 상수(`dp.CLEAN_REQUIRED_COLUMNS`)와 어긋날 수 있음. 또 app.py는 `backend`만 import하는 구조라 core 모듈을 직접 참조하면 UI·로직 분리 원칙에 어긋남.
+  2. 예시 행에 실제처럼 보이는 이름·이메일·카드번호를 쓰면 배포 보안 3계명("데모 데이터는 반드시 가상의 값")에 어긋남.
+  3. 템플릿 다운로드는 피드백을 넘는 제안에 가까움. 다만 안내 표와 함께 쓰면 오입력 자체를 줄일 수 있다고 판단해 포함함.
+- **수정 보완 내역**: 안내 표와 템플릿 모두 `dp.CLEAN_REQUIRED_COLUMNS`를 기준으로 생성하고, 설명·예시만 `_REQUIRED_COLUMN_GUIDE` 딕셔너리로 관리함. 예시 PII는 `홍길동 / hong@example.com / 0000-0000-0000-0000`로 고정함. 템플릿은 Excel에서 한글이 깨지지 않도록 `utf-8-sig`(BOM)로 인코딩함. `tests/test_backend_guide.py` 4건 추가: 안내 표 열이 검증 기준과 순서까지 일치, 템플릿 BOM·헤더+1행 구성, 예시 PII가 가상 값, 템플릿을 그대로 로더에 넣어도 필수 열 누락 없음(`io.BytesIO`로 업로드 파일 흉내).
+- **검증 및 판단 메모**: `pytest` 50 passed, 1 skipped. AppTest로 업로드 전 화면에 `st.info`·펼침 영역·9행 표·캡션이 렌더링되는 것을 확인하고, 템플릿 CSV를 그대로 run_audit_from_df()까지 관통 실행해 유효 결제 내역 1건으로 정상 처리됨을 확인함. 안내 문구도 검증 로직과 같은 상수에서 만들어야 기준이 바뀌어도 안내가 함께 따라감.
+- **브라우저 수동 검증 결과 (`streamlit run app.py`)**:
+  - After 업로드 전 — 관찰: `st.info` 아래에 "📋 CSV 필수 열 9종 및 예시 형식" 펼침 영역이 기본으로 열려 있고, 9개 열의 이름·설명·예시 표, "첫 행은 위 열 이름 헤더여야 하며, UTF-8 또는 CP949 인코딩을 지원합니다." 캡션, "⬇️ 템플릿 CSV 다운로드" 버튼이 표시됨. 예시 PII는 가상 값으로 표시됨.
+    ![After 업로드 전 안내](screenshots/week12/after_01_initial_screen.png)
+
+## [2026-11-21] CP949 폴백 로드 시 인코딩 감지 경고(st.warning) 표시 (담당: 차세연)
+- **대상 모듈**: app.py, backend.py, tests/test_backend_encoding.py / **관련 커밋**: 1c0a3f7 -> 9102cbd (After 캡처: a32604a)
+- **초기 프롬프트(요지)**: CP949 폴백 로드 시 인코딩 감지 경고를 표시하려 하며, 이를 위한 수정 방향을 먼저 요청함. AI가 제시한 3가지 안 중 B안을 채택함.
+- **AI 생성 결과(요지)**: `load_csv_with_fallback()`이 DataFrame만 반환해 UI가 인코딩을 알 수 없다는 문제를 짚고, 반환값 처리 3안을 비교 제시함(A: 기존 함수를 튜플 반환으로 변경 / B: 새 함수 `load_csv_with_encoding()` → `(df, encoding)` + 기존 함수는 래퍼로 유지 / C: `df.attrs["encoding"]` 사용). B안으로 구현하고 app.py에 `detected_encoding` 상태와 `st.warning` 표시를 추가함.
+- **발견한 문제(취약점·오류·품질)**:
+  1. A안은 기존 호출부를 함께 깨뜨림. C안은 코드는 짧지만 pandas 연산을 거치면 `attrs`가 유실될 수 있어 불안정함.
+  2. 인코딩을 지역 변수로만 두면, 필터 조작 Rerun 시 `file_id` 가드로 파일 로딩이 생략되어 경고가 사라짐 → session_state에 저장해야 함.
+  3. 새 상태 키를 추가하면 `reset_upload_state()`에도 넣어야, CP949 파일 다음에 UTF-8 파일을 올렸을 때 경고가 남지 않음.
+- **수정 보완 내역**: `load_csv_with_encoding()`을 추가하고, 기존 `load_csv_with_fallback()`는 시그니처를 고정한 채 `return load_csv_with_encoding(f)[0]` 래퍼로 남김. app.py에 `detected_encoding` 초기화 가드 추가, `reset_upload_state()`에서 함께 리셋, 성공 메시지 위에 CP949일 때 `st.warning("인코딩을 CP949로 감지하여 읽었습니다.")` 표시. `tests/test_backend_encoding.py` 4건 추가: UTF-8 감지, CP949 폴백 시 한글 복원, 빈 파일 `ValueError`, 기존 래퍼의 하위 호환.
+- **검증 및 판단 메모**: `pytest` 54 passed, 1 skipped. 상태를 하나 추가할 때는 초기화 → 쓰기 → 리셋 세 지점을 함께 챙겨야 함을 확인함.
+- **브라우저 수동 검증 결과 (`streamlit run app.py`)**:
+  - After test_cp949.csv 업로드 — 관찰: 성공 메시지 위에 노란색 `st.warning` "인코딩을 CP949로 감지하여 읽었습니다."가 표시되고, 이어서 "유효 결제 내역 80건 (정제 중 제외·보정 50건)" 성공 메시지와 KPI 총비용 28,747,450원 / 유휴 좌석 488 / 낭비 금액 12,424,935원이 표시됨. UTF-8 정상 파일(test_normal.csv)과 같은 결과로, CP949 폴백 로드 후에도 데이터 유실 없이 처리됨을 확인함.
+    ![After CP949 경고](screenshots/week12/after_05_cp949_warning.png)
+
