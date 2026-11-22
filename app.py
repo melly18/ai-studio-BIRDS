@@ -174,8 +174,12 @@ with chart_tab:
     if chart_data.empty:
         st.info("선택한 필터에 해당하는 차트 데이터가 없습니다.")
     else:
+        st.caption("본 차트는 :red[**월간 추정 낭비 금액**]이 높은 순으로 정렬되었으며, 서비스별 :blue[**총 비용**]과 :red[**낭비 금액**]을 함께 비교하여 보여줍니다.")
         if len(chart_data) > 10:
-            show_all = st.toggle(f"전체 {len(chart_data)}개 서비스 모두 보기", value=False)
+            show_all = st.toggle(
+                f"전체 {len(chart_data)}개 서비스 모두 보기", value=False,
+                help="상위 10개 서비스만 표시됩니다. 전체 서비스를 보려면 토글을 켜주세요."
+                )
             display_data = chart_data if show_all else chart_data.head(10)
         else:
             display_data = chart_data
