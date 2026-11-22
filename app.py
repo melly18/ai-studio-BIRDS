@@ -197,11 +197,12 @@ with chart_tab:
 
 with detail_tab:
     st.subheader("전체 결제 내역")
-    st.caption("모든 결제 내역에 대한 월별 지출액 항목(monthly_cost_krw)이 추가되었습니다.")
+    st.caption("전체 지출을 월 기준으로 파악할 수 있도록, 모든 결제 내역에 대해 '월간 구독 비용(원)' 항목이 추가되었습니다.")
     if filtered_df.empty:
         st.info("선택한 필터에 해당하는 결제 내역이 없습니다.")
     else:
-        st.dataframe(filtered_df, use_container_width=True)
+        display_df = backend.rename_columns_for_display(filtered_df)
+        st.dataframe(display_df, use_container_width=True)
 
     duplicate_tags = backend.get_duplicate_table(filtered_df)
     with st.expander(f"기능 중복 의심 {len(duplicate_tags)}건"):

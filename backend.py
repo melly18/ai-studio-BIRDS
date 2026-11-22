@@ -284,8 +284,7 @@ def get_chart_data(filtered_df: pd.DataFrame) -> pd.DataFrame:
         .rename(columns={
             SERVICE_COL: "서비스명", COST_COL: "월간 구독 비용(원)",
             "wasted_spend": "월간 추정 낭비 금액(원)"})
-        .sort_values(by="월간 구독 비용(원)", ascending=False)
-        .sort_values(by="월간 추정 낭비 금액(원)", ascending=False)
+        .sort_values(by=["월간 추정 낭비 금액(원)", "월간 구독 비용(원)"], ascending=False)
     )
     return chart_df
 
@@ -312,3 +311,19 @@ def get_duplicate_table(
         })
     
     return pd.DataFrame(formatted_data)
+
+def rename_columns_for_display(df: pd.DataFrame) -> pd.DataFrame:
+    """DataFrame의 컬럼명을 UI 표시용 한글로 변경."""
+    rename_map = {
+        "tx_id": "결제 거래 ID",
+        "billing_date": "결제일",
+        "service_name": "서비스명",
+        "department": "부서",
+        "billing_cycle": "결제 주기",
+        "seat_count": "구매 좌석 수",
+        "active_users": "실제 사용자 수",
+        "billing_amount_krw": "결제 금액(원)",
+        "card_holder_pii": "결제 개인정보(마스킹됨)",
+        "monthly_cost_krw": "월간 구독 비용(원)"
+    }
+    return df.rename(columns=rename_map)
