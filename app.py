@@ -229,7 +229,11 @@ with detail_tab:
 
     with st.expander("상세 진단을 위한 AI 어시스턴트", expanded=False):
         if st.session_state.chat_state is None:
-            if st.button("진단하러 가기", type="primary"):
+            st.write("AI 어시스턴트의 질문에 답변하면서 상세 진단을 진행합니다. 질문에 답변하거나 건너뛰면 다음 질문이 제시되며, 모든 질문이 완료될 경우 분석 결과를 확인할 수 있습니다.")
+            st.write("💡 진단을 시작하려면 아래 버튼을 눌러주세요.")
+            st.caption("상세 진단은 필터링과 관계없이 전체 결제 내역을 기반으로 진행됩니다.")
+            st.info("이 챗봇은 실제 LLM이 아닌 모의(MOCK) LLM을 사용하여 동작하며, 실제 LLM 호출은 13주차 이후 구현 예정입니다.")
+            if st.button("진단 시작하기", type="primary"):
                 chat = backend.initialize_chat(result, str(uploaded.file_id))
                 st.session_state.chat_state = chat["state"]
                 st.session_state.chat_history = chat["chat_history"]
@@ -237,7 +241,11 @@ with detail_tab:
                 st.session_state.chat_finished = False
                 st.rerun()
         else:
-            chat_container_height = 336 if len(st.session_state.chat_history) >= 4 else "content"
+            total_characters = sum(len(message["content"]) for message in st.session_state.chat_history)
+            if total_characters > 250 or len(st.session_state.chat_history) >= 4:
+                chat_container_height = 336
+            else:
+                chat_container_height = "content"
             with st.container(height=chat_container_height, border=True):
                 for message in st.session_state.chat_history:
                     role = message["role"]
@@ -257,39 +265,21 @@ with detail_tab:
                 if state.get("end_reason") == "skipped":
                     st.success("전체 프로세스를 스킵했습니다.")
                 else:
-                    st.success("모든 질문이 처리되었습니다.")
+                    st.success("모든 질문에 대해 답변하셨습니다. 이제 분석 결과를 확인할 수 있습니다.")
                 if st.button("분석 결과 보러가기", type="primary", use_container_width=True):
                     st.info("다음 작업에서 연결됩니다.")
             else:
                 question = questions[0]
                 answer_col, skip_col = st.columns([5, 1])
                 with answer_col:
-                    with st.form(key="chat_answer_form", clear_on_submit=True):
-                        answer = st.text_input(
-                            "답변",
-                            key="chat_answer",
-                            placeholder="LLM 질문에 대한 답변을 입력하세요",
-                        )
-                        submitted = st.form_submit_button("답변 보내기")
-                with skip_col:
-                    skipped = st.button(
-                        "이 질문 스킵",
-                        key="chat_skip",
-                        use_container_width=True,
-                    )
-
-                if submitted:
-                    cleaned_answer = answer.strip()
-                    if not cleaned_answer:
-                        st.warning("답변을 입력하거나 이 질문을 스킵하세요.")
-                    else:
+                    if answer := st.chat_input("LLM 질문에 대한 답변을 입력하세요"):
                         st.session_state.chat_history.append({
                             "role": "user",
-                            "content": cleaned_answer,
+                            "content": answer,
                         })
                         result = backend.submit_chat_answer(
                             state,
-                            cleaned_answer,
+                            answer,
                             question,
                             st.session_state.chat_audit_context,
                         )
@@ -301,6 +291,11 @@ with detail_tab:
                                 "content": result["next_question"]["question"],
                             })
                         st.rerun()
+                with skip_col:
+                    skipped = st.button(
+                        "⏩ 스킵",
+                        use_container_width=True,
+                    )
 
                 if skipped:
                     result = backend.skip_chat_question(
@@ -337,14 +332,14 @@ with detail_tab:
                         st.info("다음 작업에서 연결됩니다.")
 
             st.divider()
-            if st.button("LLM 챗봇 새로 시작하기"):
+            if st.button("진단 기록 초기화"):
                 st.session_state.confirm_chat_restart = True
 
-@st.dialog("LLM 챗봇 새로 시작")
+@st.dialog("진단 기록 초기화", icon="⚠️")
 def confirm_chat_restart() -> None:
     st.warning("이전 대화 기록과 입력한 답변이 모두 초기화됩니다.")
     if st.button("새로 시작하기", type="primary", use_container_width=True):
-        chat = backend.reset_chat(result, str(uploaded.file_id))
+        chat = backend.initialize_chat(result, str(uploaded.file_id))
         st.session_state.chat_state = chat["state"]
         st.session_state.chat_history = chat["chat_history"]
         st.session_state.chat_audit_context = chat["audit_context"]

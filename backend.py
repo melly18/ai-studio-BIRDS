@@ -387,7 +387,7 @@ def initialize_chat(
             continue
         questions.append({
             "question": str(item["question"]),
-            "slot_id": str(item.get("slot_id", f"C-{index + 1:02d}")),
+            "slot_id": str(item.get("slot_id", f"NA-{index + 1:02d}")),
             "category": str(item.get("category", "추가 정보")),
             "priority": str(item.get("priority", "optional")),
         })
@@ -468,9 +468,10 @@ def submit_chat_answer(
     next_state["current_questions"] = [
         item for item in next_state["current_questions"] if item["slot_id"] != slot_id
     ]
-    next_state["round_number"] = round_number + 1
+    next_state["round_number"] = round_number
     next_question = next_state["current_questions"][0] if next_state["current_questions"] else None
     if next_question is None:
+        next_state["round_number"] += 1
         refill = get_ai_reply(
             {
                 "messages": [{"role": "user", "content": cleaned_answer}],
@@ -516,9 +517,10 @@ def skip_chat_question(
         "question": question["question"],
         "round_number": int(next_state.get("round_number", 1)),
     })
-    next_state["round_number"] = int(next_state.get("round_number", 1)) + 1
+    next_state["round_number"] = int(next_state.get("round_number", 1))
     next_question = next_state["current_questions"][0] if next_state["current_questions"] else None
     if next_question is None:
+        next_state["round_number"] += 1
         refill = get_ai_reply(
             {
                 "messages": [{"role": "system", "content": "사용자가 질문을 스킵했습니다."}],
@@ -546,8 +548,3 @@ def skip_whole_chat(state: dict[str, Any]) -> dict[str, Any]:
     next_state["current_questions"] = []
     next_state["end_reason"] = "skipped"
     return {"state": next_state, "finished": True}
-
-
-def reset_chat(audit_result: dict[str, Any], session_id: str) -> dict[str, Any]:
-    """대화 상태와 이력을 처음 상태로 되돌린다."""
-    return initialize_chat(audit_result, session_id)
