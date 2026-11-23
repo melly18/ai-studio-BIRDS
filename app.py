@@ -140,10 +140,13 @@ selected_cycle = st.sidebar.selectbox(
     "결제 주기",
     options["billing_cycles"],
     key="cycle_filter",
+    help=(
+        "월간: 매달 결제하는 구독, 연간: 1년치를 한 번에 결제하는 구독입니다. "
+        "연간 결제는 결제 금액 ÷ 12로 월 환산해 KPI와 차트에 합산합니다."
+    ),
 )
 st.sidebar.caption(
-    "선택한 부서·결제 주기는 상단 KPI, 비용·누수 차트, 상세 내역 표에 공통으로 적용됩니다. "
-    "연간 결제는 월 환산(결제 금액 ÷ 12) 기준으로 합산됩니다."
+    "선택한 부서·결제 주기는 상단 KPI, 비용·누수 차트, 상세 내역 표에 공통으로 적용됩니다."
 )
 
 summary = backend.filter_and_summarize(clean_df, selected_dept, selected_cycle)
