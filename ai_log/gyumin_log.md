@@ -42,3 +42,35 @@
   2. [JSON 직렬화 충돌 위험] `detect_duplicate_tags()` 결과에 포함된 `set` 타입을 그대로 `build_prompt_template()`에 넘기면 `TypeError`가 발생할 위험 확인.
 - **수정 보완 내역**: `hasattr()` 및 가상 함수 호출을 제거하고, `llm_utils.py`의 실제 3단계 함수(`build_prompt_template` -> `call_llm_request` -> `parse_and_validate_json`)와 DTO 스키마(`QuestionBatch`, `FinalReport`)를 명시적으로 호출하도록 수정함. 또한 `_to_json_safe()` 재귀 어댑터를 추가해 `set`을 정렬된 `list`로 변환 후 전달하도록 보완함.
 - **검증 및 판단 메모**: `pytest` 전체 통과(`46 passed, 1 skipped`) 확인 후 `fix:` 커밋 완료. AI가 생성한 연동 코드에서 `hasattr` 같은 방어 구문이 오히려 AI 환각(존재하지 않는 함수 호출)을 숨겨 테스트를 통과시킬 수 있음을 체감했으며, AI 생성 코드일수록 실제 모듈의 함수명과 입출력 계약을 직접 교차 검증해야 함을 배움.
+
+---
+
+## [2026-11-23] 12주차 `st.session_state` 키 정리 표 및 데이터 흐름 구조도 작성·검증 (담당: 강규민)
+- **대상 산출물**: `docs/session_state_design.md`, `docs/state_flow_diagram.png`
+- **초기 프롬프트(요지)**: 최신 `app.py`, `backend.py`, `core/llm_utils.py` 코드를 기준으로 앱이 사용하는 모든 `st.session_state` 키를 5열 표(키 이름·자료형·초기화 위치·읽는 곳·쓰는 곳)로 정리하고, 대표 이용 흐름과 13주차 Claude API 교체 대상 mock 함수 위치(점선 박스)가 포함된 데이터 흐름 구조도를 작성하라.
+- **AI 생성 결과(요지)**: 10개 상태 키 정리 표와 Mermaid 기반 흐름도 코드를 생성함.
+- **발견한 문제(취약점·오류·품질)**:
+  1. [마크다운 표 깨짐] 자료형 열에 `` `dict | None` ``, `` `str | None` ``처럼 파이프(`|`) 기호가 포함되어 마크다운 표의 열 구분자로 오인식되면서 5개 행의 열이 한 칸씩 밀리는 렌더링 오류 확인.
+  2. [실제 코드 동작과의 불일치] AI 초안 구조도에서는 `confirm_chat_restart()` 팝업에서 `'새로 시작하기'` 클릭 시 3단계('진단 시작하기' 대기 화면)로 돌아가는 것으로 그렸으나, 실제 `app.py` 코드는 팝업 내부에서 `backend.initialize_chat()`을 즉시 호출하고 `st.rerun()`하여 바로 4단계(첫 질문 답변 화면)로 진입함을 확인.
+  3. [다이어그램 가독성·잘림 결함] 장거리 역방향 화살표로 인해 최초 접속(0단계)이 다이어그램 중간에 배치되고, 다크 테마에서 글자색 대비가 깨지며 PNG 추출 시 일부 박스 하단 텍스트(`detected_encoding`, `get_duplicate_table` 등)가 잘리는 문제 확인.
+- **수정 보완 내역**:
+  1. 자료형 표기를 `` `dict` / `None` ``, `` `str` / `None` ``으로 변경해 10개 행 전체가 정상 정렬되도록 수정.
+  2. 실제 `app.py` 분기 흐름에 맞춰 재시작 경로를 4단계 복귀로 바로잡고, 파일 교체(1단계 직행)와 파일 제거(6단계→0단계 복귀)를 구분하여 반영.
+  3. Mermaid `wrappingWidth` 확장, 노드별 `fill`/`color` 명시, 텍스트 압축 후 `mermaid.live`에서 고해상도 PNG(`docs/state_flow_diagram.png`)를 재추출해 저장소에 포함.
+- **검증 및 판단 메모**: VS Code 마크다운 미리보기와 추출된 PNG에서 표 10행 정렬, 텍스트 잘림 없음, 13주차 교체 지점(`backend.get_ai_reply()`, `core/llm_utils.py: call_llm_request()`) 점선 박스 표시를 최종 육안 확인함. 문서·구조도 산출물도 코드와 1:1 대조 및 렌더링 육안 검수가 필수임을 확인.
+
+---
+
+## [2026-11-23] 12주차 `st.session_state` 키 정리 표 및 데이터 흐름 구조도 제작·검증 (담당: 강규민)
+- **대상 산출물**: `docs/session_state_design.md`, `docs/state_flow_diagram.png` / **관련 커밋**: `<C1_커밋해시>`
+- **초기 프롬프트(요지)**: 최신 `app.py`, `backend.py`, `core/llm_utils.py` 코드를 컨텍스트로 제공하고, ① 앱이 사용하는 모든 `st.session_state` 키의 5열 정리 표(키 이름·자료형·초기화 위치·읽는 곳·쓰는 곳), ② 대표 이용 흐름과 13주차 Claude API 교체 지점(점선 박스)이 포함된 Mermaid 데이터 흐름 구조도를 작성하라.
+- **AI 생성 결과(요지)**: 10개 상태 키 정리 표와 `0단계→6단계` Mermaid 흐름도 코드를 생성함.
+- **발견한 문제(취약점·오류·품질)**:
+  1. [마크다운 표 열 밀림 오류] 자료형 열에 `` `dict | None` ``, `` `str | None` ``처럼 파이프(`|`) 기호를 그대로 사용해, VS Code 미리보기에서 5개 행(`audit_result`, `uploaded_file_id`, `detected_encoding`, `chat_state`, `chat_audit_context`)의 열이 한 칸씩 밀리는 렌더링 결함 발견.
+  2. [실제 코드 흐름과의 불일치] AI 초안 구조도는 `confirm_chat_restart()` 팝업에서 `'새로 시작하기'` 클릭 시 3단계('진단 시작하기' 대기 화면)로 복귀한다고 표현했으나, 실제 `app.py`는 팝업 내부에서 `backend.initialize_chat()`을 즉시 실행 후 `st.rerun()`하여 4단계(첫 질문 답변 화면)로 직행함. 또한 파일 제거(`uploaded is None` → 0단계 대기)와 다른 파일 직접 교체(`uploaded_file_id` 변경 → 1단계 분석 직행)의 경로가 구분되지 않았음.
+  3. [구조도 배치 역전 및 텍스트 잘림] 1차 Mermaid 코드에서는 장거리 역방향 화살표로 인해 `0. 최초 접속`이 중앙에 배치되고 `13주차 LLM 교체 지점`이 최상단으로 밀렸으며, 다크 모드에서 `S6` 박스 글자색 대비가 깨짐. 2차 수정 후 추출한 PNG에서도 1번(`detected_encoding`), 2번(`get_chart_data / get_duplicate_table`), 6번(`(st.stop)`) 박스 하단 텍스트가 잘리는 현상 확인.
+- **수정 보완 내역**:
+  1. `docs/session_state_design.md`의 5개 행 자료형 표기를 `` `dict` / `None` ``, `` `str` / `None` ``으로 변경해 10개 행 전체 정렬 복구.
+  2. `app.py` 실제 분기 기준으로 `5. 진단 기록 초기화 → 4. 사용자 답변/스킵` 직행 화살표로 수정하고, 파일 교체(1단계)와 파일 제거(6단계)를 분리 표현함.
+  3. `%%{init: {'flowchart': {'wrappingWidth': 360}}}%%` 지정, 노드별 `fill`/`stroke`/`color` 명시, 박스 텍스트 압축 후 `mermaid.live`에서 PNG를 재추출해 `docs/state_flow_diagram.png`에 반영.
+- **검증 및 판단 메모**: 백엔드/UI Python 코드는 수정하지 않아 별도 `pytest` 재실행 대상은 없으며, VS Code 마크다운 미리보기와 추출 PNG 육안 검수로 표 10행 정렬·텍스트 잘림 없음·13주차 교체 지점(`backend.get_ai_reply()`, `core/llm_utils.py: call_llm_request()`) 점선 박스 표기를 최종 확인함. 문서·다이어그램도 AI 출력을 그대로 커밋하면 렌더링 깨짐이나 코드와의 미세 불일치가 숨어들기 때문에, 실제 소스 코드 1:1 대조와 결과물 육안 검증이 필수임을 확인함.
