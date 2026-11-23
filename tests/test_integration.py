@@ -251,11 +251,53 @@ def test_run_pipeline_from_data_case_2():
             'round_number': 1,
             'questions': [
                 {
-                    'question': '[MOCK] 현재 이 업무에 몇 명이 함께 참여하나요?',
-                    'slot_id': '[MOCK] C-01',
-                    'category': '[MOCK] 팀 규모',
-                    'priority': 'required',
+                    "question": "[MOCK] 현재 이 업무에 몇 명이 함께 참여하나요?",
+                    "slot_id": "[MOCK] C-01",
+                    "category": "[MOCK] 팀 규모",
+                    "priority": "required",
                 },
+                {
+                    "question": "[MOCK] 현재 사용 중인 도구는 무엇인가요?",
+                    "slot_id": "[MOCK] C-02",
+                    "category": "[MOCK] 현재 사용 도구",
+                    "priority": "required",
+                },
+                {
+                    "question": "[MOCK] 월 예산 범위는 어느 정도인가요?",
+                    "slot_id": "[MOCK] C-03",
+                    "category": "[MOCK] 예산 범위",
+                    "priority": "required",
+                },
+                {
+                    "question": "[MOCK] 현재 업무에서 가장 큰 병목은 무엇인가요?",
+                    "slot_id": "[MOCK] C-04",
+                    "category": "[MOCK] 핵심 병목",
+                    "priority": "required",
+                },
+                {
+                    "question": "[MOCK] 이 업무와 연동이 필요한 다른 시스템이나 도구가 있나요?",
+                    "slot_id": "[MOCK] C-05",
+                    "category": "[MOCK] 연동 필요 대상",
+                    "priority": "conditional",
+                },
+                {
+                    "question": "[MOCK] 이 업무에서 준수해야 하는 보안 또는 규정 요건이 있나요?",
+                    "slot_id": "[MOCK] C-06",
+                    "category": "[MOCK] 보안·규정 요건",
+                    "priority": "conditional",
+                },
+                {
+                    "question": "[MOCK] 이 업무를 수행하는 구성원의 IT 숙련도 수준은 어느 정도인가요?",
+                    "slot_id": "[MOCK] C-07",
+                    "category": "[MOCK] 구성원 IT 숙련도",
+                    "priority": "optional",
+                },
+                {
+                    "question": "[MOCK] 이 업무가 하루/한 달에 대략 몇 건인가요?",
+                    "slot_id": "[MOCK] C-08",
+                    "category": "[MOCK] 업무 빈도·볼륨",
+                    "priority": "optional",
+                }
             ],
             'can_finish_now': False,
         },
