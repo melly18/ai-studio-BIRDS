@@ -327,3 +327,227 @@ def rename_columns_for_display(df: pd.DataFrame) -> pd.DataFrame:
         "monthly_cost_krw": "월간 구독 비용(원)"
     }
     return df.rename(columns=rename_map)
+
+
+def get_ai_reply(
+    messages: dict[str, Any],
+    audit_context: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    """llm_utils를 호출해 현재 상태에 맞는 다음 질문 목록을 반환한다."""
+    if not isinstance(messages, dict):
+        raise TypeError("messages must be a dict")
+    state = messages.get("state")
+    if not isinstance(state, dict):
+        raise TypeError("messages['state'] must be a dict")
+
+    missing_slots = list(state.get("missing_slots", []))
+    filled_slots = dict(state.get("filled_slots", {}))
+    skipped_slots = list(state.get("skipped_slots", []))
+    if not missing_slots:
+        return []
+
+    prompt_state = dict(state)
+    prompt_state["filled_slots"] = filled_slots
+    prompt_state["missing_slots"] = missing_slots
+    prompt_state["skipped_slots"] = skipped_slots
+    prompt = llm.build_prompt_template(
+        "question",
+        prompt_state,
+        audit_context or {},
+    )
+    batch = llm.parse_and_validate_json(
+        llm.call_llm_request(prompt),
+        llm.QuestionBatch,
+    )
+
+    returned_items = batch.get("questions", [])
+    questions: list[dict[str, Any]] = []
+    for index, item in enumerate(returned_items):
+        if index >= len(missing_slots):
+            break
+        questions.append({
+            "question": str(item["question"]),
+            "slot_id": str(missing_slots[index]),
+            "category": str(item.get("category", "추가 정보")),
+            "priority": str(item.get("priority", "optional")),
+        })
+    return questions
+
+
+def initialize_chat(
+    audit_result: dict[str, Any],
+    session_id: str,
+) -> dict[str, Any]:
+    """audit_result의 llm_questions를 초기 ConversationState로 변환한다."""
+    llm_questions = audit_result.get("llm_questions", {})
+    question_items = llm_questions.get("questions", []) if isinstance(llm_questions, dict) else []
+    questions: list[dict[str, Any]] = []
+    for index, item in enumerate(question_items):
+        if not isinstance(item, dict) or not item.get("question"):
+            continue
+        questions.append({
+            "question": str(item["question"]),
+            "slot_id": str(item.get("slot_id", f"C-{index + 1:02d}")),
+            "category": str(item.get("category", "추가 정보")),
+            "priority": str(item.get("priority", "optional")),
+        })
+
+    state: dict[str, Any] = {
+        "session_id": session_id,
+        "round_number": int(llm_questions.get("round_number", 1)) if isinstance(llm_questions, dict) else 1,
+        "process_codes": ["P1", "P2", "P3", "P4", "P5"],
+        "filled_slots": {},
+        "missing_slots": [item["slot_id"] for item in questions],
+        "skipped_slots": [],
+        "question_history": [
+            {
+                "slot_id": item["slot_id"],
+                "question": item["question"],
+                "round_number": int(llm_questions.get("round_number", 1)) if isinstance(llm_questions, dict) else 1,
+            }
+            for item in questions
+        ],
+        "answer_history": [],
+        "can_finish_now": bool(llm_questions.get("can_finish_now", False)) if isinstance(llm_questions, dict) else False,
+        "current_questions": questions,
+        "end_reason": None,
+    }
+    chat_history = (
+        [{"role": "assistant", "content": questions[0]["question"]}]
+        if questions
+        else []
+    )
+    audit_context = _to_json_safe({
+        "seat_leakage": audit_result.get("seat_leakage", []),
+        "duplicate_tags": audit_result.get("duplicate_tags", []),
+    })
+    return {
+        "state": state,
+        "questions": questions,
+        "chat_history": chat_history,
+        "audit_context": audit_context,
+    }
+
+
+def submit_chat_answer(
+    state: dict[str, Any],
+    answer: str,
+    question: dict[str, Any],
+    audit_context: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """한 질문의 답변과 상태를 누적 갱신한다."""
+    next_state = dict(state)
+    next_state["filled_slots"] = dict(next_state.get("filled_slots", {}))
+    next_state["missing_slots"] = list(next_state.get("missing_slots", []))
+    next_state["answer_history"] = list(next_state.get("answer_history", []))
+    next_state["question_history"] = list(next_state.get("question_history", []))
+    next_state["current_questions"] = list(next_state.get("current_questions", []))
+
+    slot_id = str(question["slot_id"])
+    cleaned_answer = answer.strip()
+    round_number = int(next_state.get("round_number", 1))
+    next_state["filled_slots"][slot_id] = {
+        "value": cleaned_answer,
+        "source": "user",
+        "evidence": cleaned_answer,
+        "round_number": round_number,
+    }
+    next_state["missing_slots"] = [
+        slot for slot in next_state["missing_slots"] if slot != slot_id
+    ]
+    next_state["answer_history"].append({
+        "slot_id": slot_id,
+        "answer": cleaned_answer,
+        "round_number": round_number,
+    })
+    next_state["question_history"].append({
+        "slot_id": slot_id,
+        "question": question["question"],
+        "round_number": round_number,
+    })
+    next_state["current_questions"] = [
+        item for item in next_state["current_questions"] if item["slot_id"] != slot_id
+    ]
+    next_state["round_number"] = round_number + 1
+    next_question = next_state["current_questions"][0] if next_state["current_questions"] else None
+    if next_question is None:
+        refill = get_ai_reply(
+            {
+                "messages": [{"role": "user", "content": cleaned_answer}],
+                "state": next_state,
+            },
+            audit_context,
+        )
+        if refill:
+            next_state["current_questions"] = refill
+            next_question = refill[0]
+        else:
+            next_state["end_reason"] = "completed"
+    return {
+        "state": next_state,
+        "finished": not next_state["current_questions"],
+        "next_question": next_question,
+    }
+
+
+def skip_chat_question(
+    state: dict[str, Any],
+    question: dict[str, Any],
+    audit_context: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """한 질문을 스킵하고 상태를 누적 갱신한다."""
+    next_state = dict(state)
+    next_state["skipped_slots"] = list(next_state.get("skipped_slots", []))
+    next_state["missing_slots"] = list(next_state.get("missing_slots", []))
+    next_state["current_questions"] = list(next_state.get("current_questions", []))
+    next_state["question_history"] = list(next_state.get("question_history", []))
+
+    slot_id = str(question["slot_id"])
+    if slot_id not in next_state["skipped_slots"]:
+        next_state["skipped_slots"].append(slot_id)
+    next_state["missing_slots"] = [
+        slot for slot in next_state["missing_slots"] if slot != slot_id
+    ]
+    next_state["current_questions"] = [
+        item for item in next_state["current_questions"] if item["slot_id"] != slot_id
+    ]
+    next_state["question_history"].append({
+        "slot_id": slot_id,
+        "question": question["question"],
+        "round_number": int(next_state.get("round_number", 1)),
+    })
+    next_state["round_number"] = int(next_state.get("round_number", 1)) + 1
+    next_question = next_state["current_questions"][0] if next_state["current_questions"] else None
+    if next_question is None:
+        refill = get_ai_reply(
+            {
+                "messages": [{"role": "system", "content": "사용자가 질문을 스킵했습니다."}],
+                "state": next_state,
+            },
+            audit_context,
+        )
+        if refill:
+            next_state["current_questions"] = refill
+            next_question = refill[0]
+        else:
+            next_state["end_reason"] = "completed"
+    return {
+        "state": next_state,
+        "finished": not next_state["current_questions"],
+        "next_question": next_question,
+    }
+
+
+def skip_whole_chat(state: dict[str, Any]) -> dict[str, Any]:
+    """전체 챗봇 상호작용을 종료한다."""
+    next_state = dict(state)
+    next_state["can_finish_now"] = True
+    next_state["user_requested_finish"] = True
+    next_state["current_questions"] = []
+    next_state["end_reason"] = "skipped"
+    return {"state": next_state, "finished": True}
+
+
+def reset_chat(audit_result: dict[str, Any], session_id: str) -> dict[str, Any]:
+    """대화 상태와 이력을 처음 상태로 되돌린다."""
+    return initialize_chat(audit_result, session_id)

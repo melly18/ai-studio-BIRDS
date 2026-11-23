@@ -22,6 +22,18 @@ if "uploaded_file_id" not in st.session_state:
 if "detected_encoding" not in st.session_state:
     st.session_state.detected_encoding = None
 
+if "chat_state" not in st.session_state:
+    st.session_state.chat_state = None
+
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
+
+if "chat_finished" not in st.session_state:
+    st.session_state.chat_finished = False
+
+if "chat_audit_context" not in st.session_state:
+    st.session_state.chat_audit_context = None
+
 # 사이드바 필터 위젯(key)의 기본값. 파일 교체 시 이 값으로 되돌린다.
 FILTER_DEFAULTS = {"dept_filter": "전체", "cycle_filter": "전체"}
 for _key, _default in FILTER_DEFAULTS.items():
@@ -50,6 +62,10 @@ def reset_upload_state() -> None:
     st.session_state.audit_result = None
     st.session_state.uploaded_file_id = None
     st.session_state.detected_encoding = None
+    st.session_state.chat_state = None
+    st.session_state.chat_history = []
+    st.session_state.chat_finished = False
+    st.session_state.chat_audit_context = None
     for key, default in FILTER_DEFAULTS.items():
         st.session_state[key] = default
 
@@ -211,13 +227,129 @@ with detail_tab:
         else:
             st.dataframe(duplicate_tags, use_container_width=True)
 
-    with st.expander("상세 진단을 위한 AI 어시스턴트"):
-        questions = result["llm_questions"]["questions"]
-        if questions:
-            for question in questions:
-                st.markdown(f"**{question['question']}**")
+    with st.expander("상세 진단을 위한 AI 어시스턴트", expanded=False):
+        if st.session_state.chat_state is None:
+            if st.button("진단하러 가기", type="primary"):
+                chat = backend.initialize_chat(result, str(uploaded.file_id))
+                st.session_state.chat_state = chat["state"]
+                st.session_state.chat_history = chat["chat_history"]
+                st.session_state.chat_audit_context = chat["audit_context"]
+                st.session_state.chat_finished = False
+                st.rerun()
         else:
-            st.info("현재 질문드릴 사항이 없습니다.")
+            chat_container_height = 336 if len(st.session_state.chat_history) >= 4 else "content"
+            with st.container(height=chat_container_height, border=True):
+                for message in st.session_state.chat_history:
+                    role = message["role"]
+                    if role == "assistant":
+                        with st.chat_message("assistant", avatar="🦅"):
+                            st.markdown(message["content"])
+                    elif role == "user":
+                        with st.chat_message("user", avatar="👤"):
+                            st.markdown(message["content"])
+                    else:
+                        st.caption(message["content"])
 
-        if st.button("진단하러 가기"):
-            st.info("LLM 챗봇 UI는 다음 작업에서 연결됩니다.")
+            state = st.session_state.chat_state
+            questions = state.get("current_questions", [])
+
+            if st.session_state.chat_finished or not questions:
+                if state.get("end_reason") == "skipped":
+                    st.success("전체 프로세스를 스킵했습니다.")
+                else:
+                    st.success("모든 질문이 처리되었습니다.")
+                if st.button("분석 결과 보러가기", type="primary", use_container_width=True):
+                    st.info("다음 작업에서 연결됩니다.")
+            else:
+                question = questions[0]
+                answer_col, skip_col = st.columns([5, 1])
+                with answer_col:
+                    with st.form(key="chat_answer_form", clear_on_submit=True):
+                        answer = st.text_input(
+                            "답변",
+                            key="chat_answer",
+                            placeholder="LLM 질문에 대한 답변을 입력하세요",
+                        )
+                        submitted = st.form_submit_button("답변 보내기")
+                with skip_col:
+                    skipped = st.button(
+                        "이 질문 스킵",
+                        key="chat_skip",
+                        use_container_width=True,
+                    )
+
+                if submitted:
+                    cleaned_answer = answer.strip()
+                    if not cleaned_answer:
+                        st.warning("답변을 입력하거나 이 질문을 스킵하세요.")
+                    else:
+                        st.session_state.chat_history.append({
+                            "role": "user",
+                            "content": cleaned_answer,
+                        })
+                        result = backend.submit_chat_answer(
+                            state,
+                            cleaned_answer,
+                            question,
+                            st.session_state.chat_audit_context,
+                        )
+                        st.session_state.chat_state = result["state"]
+                        st.session_state.chat_finished = result["finished"]
+                        if result["next_question"] is not None:
+                            st.session_state.chat_history.append({
+                                "role": "assistant",
+                                "content": result["next_question"]["question"],
+                            })
+                        st.rerun()
+
+                if skipped:
+                    result = backend.skip_chat_question(
+                        state,
+                        question,
+                        st.session_state.chat_audit_context,
+                    )
+                    st.session_state.chat_state = result["state"]
+                    st.session_state.chat_finished = result["finished"]
+                    st.session_state.chat_history.append({
+                        "role": "system",
+                        "content": "[MOCK] 이 질문을 건너뛰었습니다.",
+                    })
+                    if result["next_question"] is not None:
+                        st.session_state.chat_history.append({
+                            "role": "assistant",
+                            "content": result["next_question"]["question"],
+                        })
+                    st.rerun()
+
+                whole_skip_col, view_col = st.columns(2)
+                with whole_skip_col:
+                    if st.button("전체 프로세스 스킵", use_container_width=True):
+                        result = backend.skip_whole_chat(state)
+                        st.session_state.chat_state = result["state"]
+                        st.session_state.chat_finished = True
+                        st.session_state.chat_history.append({
+                            "role": "system",
+                            "content": "[MOCK] 전체 프로세스를 스킵했습니다.",
+                        })
+                        st.rerun()
+                with view_col:
+                    if st.button("분석 결과 바로 보기", use_container_width=True):
+                        st.info("다음 작업에서 연결됩니다.")
+
+            st.divider()
+            if st.button("LLM 챗봇 새로 시작하기"):
+                st.session_state.confirm_chat_restart = True
+
+@st.dialog("LLM 챗봇 새로 시작")
+def confirm_chat_restart() -> None:
+    st.warning("이전 대화 기록과 입력한 답변이 모두 초기화됩니다.")
+    if st.button("새로 시작하기", type="primary", use_container_width=True):
+        chat = backend.reset_chat(result, str(uploaded.file_id))
+        st.session_state.chat_state = chat["state"]
+        st.session_state.chat_history = chat["chat_history"]
+        st.session_state.chat_audit_context = chat["audit_context"]
+        st.session_state.chat_finished = False
+        st.rerun()
+
+if st.session_state.pop("confirm_chat_restart", False):
+    confirm_chat_restart()
