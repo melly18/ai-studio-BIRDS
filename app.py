@@ -228,14 +228,14 @@ with detail_tab:
         st.info("선택한 필터에 해당하는 결제 내역이 없습니다.")
     else:
         display_df = backend.rename_columns_for_display(filtered_df)
-        st.dataframe(display_df, use_container_width=True)
+        st.dataframe(display_df, width="stretch")
 
     duplicate_tags = backend.get_duplicate_table(filtered_df)
     with st.expander(f"기능 중복 의심 {len(duplicate_tags)}건"):
         if duplicate_tags.empty:
             st.info("현재 이용 중인 서비스 간 기능 중복이 없습니다.")
         else:
-            st.dataframe(duplicate_tags, use_container_width=True)
+            st.dataframe(duplicate_tags, width="stretch")
 
     with st.expander("상세 진단을 위한 AI 어시스턴트", expanded=False):
         if st.session_state.chat_state is None:
@@ -276,7 +276,7 @@ with detail_tab:
                     st.success("전체 프로세스를 스킵했습니다.")
                 else:
                     st.success("모든 질문에 대해 답변하셨습니다. 이제 분석 결과를 확인할 수 있습니다.")
-                if st.button("분석 결과 보러가기", type="primary", use_container_width=True):
+                if st.button("분석 결과 보러가기", type="primary", width="stretch"):
                     st.info("다음 작업에서 연결됩니다.")
             else:
                 question = questions[0]
@@ -304,7 +304,7 @@ with detail_tab:
                 with skip_col:
                     skipped = st.button(
                         "⏩ 스킵",
-                        use_container_width=True,
+                        width="stretch",
                     )
 
                 if skipped:
@@ -328,7 +328,7 @@ with detail_tab:
 
                 whole_skip_col, view_col = st.columns(2)
                 with whole_skip_col:
-                    if st.button("전체 프로세스 스킵", use_container_width=True):
+                    if st.button("전체 프로세스 스킵", width="stretch"):
                         result = backend.skip_whole_chat(state)
                         st.session_state.chat_state = result["state"]
                         st.session_state.chat_finished = True
@@ -338,7 +338,7 @@ with detail_tab:
                         })
                         st.rerun()
                 with view_col:
-                    if st.button("분석 결과 바로 보기", use_container_width=True):
+                    if st.button("분석 결과 바로 보기", width="stretch"):
                         st.info("다음 작업에서 연결됩니다.")
 
             st.divider()
@@ -348,7 +348,7 @@ with detail_tab:
 @st.dialog("진단 기록 초기화", icon="⚠️")
 def confirm_chat_restart() -> None:
     st.warning("이전 대화 기록과 입력한 답변이 모두 초기화됩니다.")
-    if st.button("새로 시작하기", type="primary", use_container_width=True):
+    if st.button("새로 시작하기", type="primary", width="stretch"):
         chat = backend.initialize_chat(result, str(uploaded.file_id))
         st.session_state.chat_state = chat["state"]
         st.session_state.chat_history = chat["chat_history"]
