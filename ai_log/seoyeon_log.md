@@ -26,7 +26,7 @@
 
 - **검증 및 판단 메모**: pytest 56 passed, 1 skipped로 모든 케이스를 정상 통과함. 실제 app 호출 결과는 아래 항목에 작성함. llm이 st.button과 같은 요소를 만들 때, 요소 구분을 위해 key= 사용이 빈번하다는 사실을 알게 됨. 앞으로의 streamlit 구현에 있어서 st.session_state 검증이 꼭 필요하다는 것을 다시 확인함.
 - **브라우저 수동 검증 결과**: st.expander 클릭 시 의도한 설명 문구가 제대로 노출되고, 진단 시작을 누르면 아래 캡처 사진과 같이 llm과의 대화 내역과 입력창, 다양한 버튼이 뜨는 것을 확인함. 아래 캡처는 첫 번째 질문에 답변, 두 번째 질문에 스킵한 화면임.  
-![llm 역질문 대화 ui](screenshots/week12/after_07_llm_chatbot.png)
+![llm 역질문 대화 ui](screenshots/week12/after_10_llm_chatbot.png)
 
 ---
 
