@@ -368,6 +368,8 @@ def call_llm_request(prompt: str) -> str:
     {"role": "user", "content": prompt}
     ],
     )
+
     if USE_MOCK:
         return _call_llm_request_mock(prompt)
-    return response.content[0].text
+    text_parts = [block.text for block in response.content if block.type == "text"]
+    return "\n".join(text_parts)
