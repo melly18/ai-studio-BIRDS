@@ -97,6 +97,15 @@ if st.session_state.uploaded_file_id != uploaded.file_id:
     try:
         with st.spinner("결제 내역을 분석하는 중입니다..."):
             raw_df, encoding = backend.load_csv_with_encoding(uploaded)  # cp949 재시도 포함
+            # 보안 체크리스트 5번: 빈 데이터·용량(행 수 상한) 검증
+            if raw_df.empty:
+                reset_upload_state()
+                st.error("업로드한 CSV에 결제 내역 행이 없습니다.")
+                st.stop()
+            if len(raw_df) > 100_000:
+                reset_upload_state()
+                st.error("CSV 행 수가 허용 한도(100,000행)를 초과했습니다. 기간을 나눠 업로드해 주세요.")
+                st.stop()
             st.session_state.audit_result = backend.run_audit_from_df(raw_df)
         st.session_state.uploaded_file_id = uploaded.file_id
         st.session_state.detected_encoding = encoding
