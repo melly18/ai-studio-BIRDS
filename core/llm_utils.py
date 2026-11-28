@@ -1,5 +1,9 @@
 import json
 import re
+import os
+from dotenv import load_dotenv
+from datetime import datetime
+import anthropic
 from typing import Any, Literal, TypedDict, TypeVar, cast, get_args, get_origin, get_type_hints, is_typeddict
 
 from core.template import(
@@ -238,7 +242,7 @@ def build_prompt_template(
         f"{instructions}"
     )
 
-USE_MOCK = True
+USE_MOCK = False
 
 def _call_llm_request_mock(prompt: str) -> str:
     """
@@ -354,6 +358,16 @@ def call_llm_request(prompt: str) -> str:
     """
     assert isinstance(prompt, str), f"prompt must be a string, not {type(prompt)}"
     assert "출력 형식:" in prompt, f"prompt must contain '출력 형식:' to indicate expected JSON output"
+    load_dotenv(override=True) # .env 파일을 환경 변수로 로드
+    client = anthropic.Anthropic() # ANTHROPIC_API_KEY를 환경에서 자동 인식
+    response = client.messages.create(
+    # model="claude-haiku-4-5", # 개발·반복 실험용 경량 모델
+    model="claude-haiku-5-5", # 경량 모델로써 더 저렴하고 최신 모델이므로 추천
+    max_tokens=500,
+    messages=[
+    {"role": "user", "content": prompt}
+    ],
+    )
     if USE_MOCK:
         return _call_llm_request_mock(prompt)
-    return "Not Ready for real LLM request"  #13주차 구현 예정
+    return response.content[0].text
