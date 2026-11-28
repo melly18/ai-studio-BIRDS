@@ -372,4 +372,4 @@ def call_llm_request(prompt: str) -> str:
     if USE_MOCK:
         return _call_llm_request_mock(prompt)
     text_parts = [block.text for block in response.content if block.type == "text"]
-    return "\n".join(text_parts)
+    return json.dumps("\n".join(text_parts))
