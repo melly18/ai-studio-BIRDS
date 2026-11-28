@@ -345,6 +345,11 @@ def _call_llm_request_mock(prompt: str) -> str:
             ensure_ascii=False,
         )
 
+def log_usage(response):
+    in_tok = response.usage.input_tokens
+    out_tok = response.usage.output_tokens
+    print(f"TOKEN_LOG,{datetime.now():%Y-%m-%d %H:%M:%S},{response.model},{in_tok},{out_tok},{in_tok + out_tok}")
+
 def call_llm_request(prompt: str) -> str:
     """
     요청된 프롬프트를 LLM에 전달하고 응답을 반환한다. 현재는 모의 응답을 반환하도록 설정되어 있다.
@@ -363,13 +368,16 @@ def call_llm_request(prompt: str) -> str:
     response = client.messages.create(
     # model="claude-haiku-4-5", # 개발·반복 실험용 경량 모델
     model="claude-haiku-5-5", # 경량 모델로써 더 저렴하고 최신 모델이므로 추천
-    max_tokens=500,
+    max_tokens=2000,
+    thinking={"type": "disabled"},
     messages=[
     {"role": "user", "content": prompt}
     ],
     )
-
+    log_usage(response)
     if USE_MOCK:
         return _call_llm_request_mock(prompt)
     text_parts = [block.text for block in response.content if block.type == "text"]
-    return json.dumps("\n".join(text_parts))
+    response_text = "\n".join(text_parts)
+    print(f"LLM response text:\n{response_text}\n")
+    return response_text.strip()
